@@ -1,0 +1,14 @@
+{
+  "name": "dealer4dealer/xcore-magento2-pricelist",
+  "description": "This module creates tier prices for the data synchronised through xcore magento 2 extension.",
+  "type": "magento2-module",
+  "license": [
+    "MIT"
+  ],
+  "autoload": {
+    "files": [ "registration.php" ],
+    "psr-4": {
+      "Dealer4dealer\\Xcore\\": ""
+    }
+  }
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+	<event name="customer_customer_save_after">
+		<observer instance="Dealer4dealer\Pricelist\Observer\Customer\CustomerSaveAfter" name="dealer4dealer_xcorepricelist_observer_customer_customersaveafter_customer_customer_save_after"/>
+	</event>
+</config>

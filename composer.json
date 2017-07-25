@@ -2,7 +2,6 @@
     "name": "dealer4dealer/pricelist-magento2",
     "description": "Creates Tier Prices by using the data synchronised with https://github.com/dealer4dealer/magento2-restapi.",
     "type": "magento2-module",
-    "version": "0.0.1",
     "license": ["MIT"],
     "autoload": {
         "files": ["registration.php"],

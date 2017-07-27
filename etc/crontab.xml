@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
 	<group id="default">
-		<job instance="Dealer4dealer\Pricelist\Cron\PriceList" method="execute" name="dealer4dealer_xcorepricelist_pricelist">
+		<job instance="Dealer4dealer\Pricelist\Cron\PriceList" method="execute" name="dealer4dealer_pricelist_generate_tier_prices">
 			<schedule>0 0 * * *</schedule>
 		</job>
 	</group>

@@ -7,10 +7,12 @@ interface PriceListItemInterface
     const ID            = 'id';
     const PRICE_LIST_ID = 'price_list_id';
     const PRODUCT_ID    = 'product_id';
+    const PRODUCT_SKU   = 'product_sku';
     const QTY           = 'qty';
     const PRICE         = 'price';
     const START_DATE    = 'start_date';
     const END_DATE      = 'end_date';
+    const PROCESSED     = 'processed';
 
     /**
      * Get id
@@ -50,6 +52,19 @@ interface PriceListItemInterface
      * @return PriceListItemInterface
      */
     public function setProductId($product_id);
+
+    /**
+     * Get product_sku
+     * @return string|null
+     */
+    public function getProductSku();
+
+    /**
+     * Set product_sku
+     * @param string $product_sku
+     * @return PriceListItemInterface
+     */
+    public function setProductSku($product_sku);
 
     /**
      * Get qty
@@ -102,4 +117,17 @@ interface PriceListItemInterface
      * @return PriceListItemInterface
      */
     public function setEndDate($end_date);
+
+    /**
+     * Get processed
+     * @return string
+     */
+    public function getProcessed();
+
+    /**
+     * Set processed
+     * @param string $int
+     * @return PriceListItemInterface
+     */
+    public function setProcessed($int);
 }

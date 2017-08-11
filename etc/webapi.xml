@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<routes>
+    <route url="/V1/dealer4dealer/generate/tierprices" method="GET">
+        <service class="Dealer4dealer\Pricelist\Cron\PriceList" method="execute"/>
+        <resources>
+            <resource ref="Magento_Sales::sales"/>
+        </resources>
+    </route>
+</routes>

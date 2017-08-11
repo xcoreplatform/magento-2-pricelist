@@ -74,6 +74,25 @@ class PriceListItem extends AbstractModel implements PriceListItemInterface
     }
 
     /**
+     * Get product_sku
+     * @return string
+     */
+    public function getProductSku()
+    {
+        return $this->getData(self::PRODUCT_SKU);
+    }
+
+    /**
+     * Set product_sku
+     * @param string $product_sku
+     * @return PriceListItemInterface
+     */
+    public function setProductSku($product_sku)
+    {
+        return $this->setData(self::PRODUCT_SKU, $product_sku);
+    }
+
+    /**
      * Get qty
      * @return string
      */
@@ -147,5 +166,24 @@ class PriceListItem extends AbstractModel implements PriceListItemInterface
     public function setEndDate($end_date)
     {
         return $this->setData(self::END_DATE, $end_date);
+    }
+
+    /**
+     * Get processed
+     * @return string
+     */
+    public function getProcessed()
+    {
+        return $this->getData(self::PROCESSED);
+    }
+
+    /**
+     * Set processed
+     * @param string $int
+     * @return PriceListItemInterface
+     */
+    public function setProcessed($int)
+    {
+        return $this->setData(self::PROCESSED, $int);
     }
 }

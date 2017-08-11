@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<config>
+    <system>
+        <tab id="dealer4dealer" translate="label" sortOrder="10">
+            <label>Dealer4Dealer</label>
+        </tab>
+        <section id="pricelist" translate="label" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+            <class>separator-top</class>
+            <label>Price List</label>
+            <tab>dealer4dealer</tab>
+            <resource>Dealer4dealer_Pricelist::settings_configuration</resource>
+            <group id="general" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>General</label>
+                <field id="enabled" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        States if this module is enabled.
+                    </comment>
+                </field>
+            </group>
+            <group id="customer" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Customer</label>
+                <field id="enabled" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Update group on customer save</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        The Dealer4Dealer Price List module will update the customer group of a customer, based on the Price List and VAT Class.
+                        If you want to manually add customers to xCore Price List customer groups, set this setting to 'No'.
+                        Make sure the setting to create 'empty' groups in the Cron Configuration is set to 'Yes' when this setting is disabled.
+                        Otherwise, no xCore Price List groups will be available.
+                    </comment>
+                </field>
+                <field id="default" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Default customer group</label>
+                    <source_model>Magento\Customer\Model\Customer\Source\Group</source_model>
+                    <comment>
+                        If 'Update group on customer save' is set to 'Yes', this module will set the customer group to this value, if no xCore
+                        Price List is selected for the customer.
+                    </comment>
+                </field>
+                <field id="run_cron" translate="label" type="select" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Run cron on new customer group</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        When a customer is synchronised and the combination of the Price List and VAT Class hasn't been used before, a new customer
+                        group will be created. Unless the setting to create 'empty' groups is turned on, no Tier Prices will exist for the new
+                        customer group. Set this setting to 'Yes' to run the cron, which will create Tier Prices for the new group.
+                    </comment>
+                </field>
+            </group>
+            <group id="cron" translate="label" type="text" sortOrder="3" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Cron</label>
+                <field id="empty_groups" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Create 'empty' groups for all Price Lists</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        For each Price List, multiple customer groups can exist, based on the VAT Class of the customer. If this setting
+                        is set to 'Yes', it will create groups even if there aren't any customers belonging to that group. This will result
+                        in Tier Prices being created for these groups. As soon as a customer is added to the groups, the Tier Prices will
+                        be in place.
+                    </comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

@@ -2,6 +2,12 @@
 
 namespace Dealer4dealer\Pricelist\Observer\Customer;
 
+use Dealer4dealer\Pricelist\Api\Data\PriceListItemInterface;
+use Dealer4dealer\Pricelist\Api\PriceListItemRepositoryInterface;
+use Dealer4dealer\Pricelist\Cron\PriceList;
+use Dealer4dealer\Pricelist\Helper\CustomerConfig;
+use Dealer4dealer\Pricelist\Helper\Data;
+use Dealer4dealer\Pricelist\Helper\GeneralConfig;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Model\Data\Customer;
 use Magento\Customer\Model\Data\Group;
@@ -16,34 +22,56 @@ use Psr\Log\LoggerInterface;
 
 class SaveAfter implements ObserverInterface
 {
-    protected $logger;
-    protected $searchCriteriaBuilder;
-    protected $customerRepository;
-    protected $customerGroupRepository;
-    protected $customerGroupFactory;
-    protected $taxClassRepository;
+    private $logger;
+    private $helper;
+    private $searchCriteriaBuilder;
+    private $customerRepository;
+    private $customerGroupRepository;
+    private $customerGroupFactory;
+    private $taxClassRepository;
+    private $priceListItemRepository;
+    private $cronJob;
 
-    private $_customerPriceList;
-    private $_customerVatClass;
-    private $_customerGroupId;
+    private $customerPriceList;
+    private $customerVatClass;
+    private $customerGroupId;
 
-    private $_groupCode;
-    private $_groupId;
-    private $_taxClassId;
+    private $groupCode;
+    private $groupId;
+    private $taxClassId;
 
+    /**
+     * Constructor.
+     *
+     * @param LoggerInterface $logger
+     * @param Data $helper
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param CustomerRepository $customerRepository
+     * @param GroupRepository $groupRepository
+     * @param GroupInterfaceFactory $groupFactory
+     * @param TaxClassRepository $taxRepository
+     * @param PriceListItemRepositoryInterface $priceListItemRepository
+     * @param PriceList $cronJob
+     */
     public function __construct(LoggerInterface $logger,
+                                Data $helper,
                                 SearchCriteriaBuilder $searchCriteriaBuilder,
                                 CustomerRepository $customerRepository,
                                 GroupRepository $groupRepository,
                                 GroupInterfaceFactory $groupFactory,
-                                TaxClassRepository $taxRepository)
+                                TaxClassRepository $taxRepository,
+                                PriceListItemRepositoryInterface $priceListItemRepository,
+                                PriceList $cronJob)
     {
         $this->logger                  = $logger;
+        $this->helper                  = $helper;
         $this->searchCriteriaBuilder   = $searchCriteriaBuilder;
         $this->customerRepository      = $customerRepository;
         $this->customerGroupRepository = $groupRepository;
         $this->customerGroupFactory    = $groupFactory;
         $this->taxClassRepository      = $taxRepository;
+        $this->cronJob                 = $cronJob;
+        $this->priceListItemRepository = $priceListItemRepository;
     }
 
     /**
@@ -54,34 +82,43 @@ class SaveAfter implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
+        if ($this->moduleEnabled() == false) return;
+
+        if ($this->updateGroupEnabled() == false) return;
+
         /** @var Customer $customer */
         $customer = $observer->getData('customer_data_object');
 
-        $this->_customerPriceList = $customer->getCustomAttribute('price_list');
-        if ($this->_customerPriceList) $this->_customerPriceList = $this->_customerPriceList->getValue();
+        $this->customerPriceList = $customer->getCustomAttribute('price_list');
+        if ($this->customerPriceList) $this->customerPriceList = $this->customerPriceList->getValue();
 
-        $this->_customerVatClass = $customer->getCustomAttribute('vat_class');
-        if ($this->_customerVatClass) $this->_customerVatClass = $this->_customerVatClass->getValue();
+        $this->customerVatClass = $customer->getCustomAttribute('vat_class');
+        if ($this->customerVatClass) $this->customerVatClass = $this->customerVatClass->getValue();
 
-        $this->_customerGroupId = $customer->getGroupId();
+        $this->customerGroupId = $customer->getGroupId();
 
-        // If a price list is given, make sure the user is added the the correct group
-        if ($this->_customerPriceList) {
+        if ($this->customerPriceList) {
+
             $this->createGroupCode();
 
             $this->createGroupIfNeeded();
 
 
-            if ($this->_customerGroupId != $this->_groupId) {
-                $customer->setGroupId($this->_groupId);
+            if ($this->customerGroupId != $this->groupId) {
+
+                $customer->setGroupId($this->groupId);
 
                 $this->customerRepository->save($customer);
             }
         }
 
-        if (!$this->_customerPriceList) {
-            if ($this->_customerGroupId != 1) {
-                $customer->setGroupId(1);
+        if (!$this->customerPriceList) {
+
+            $default = $this->getDefaultCustomerGroup();
+
+            if ($this->customerGroupId != $default) {
+
+                $customer->setGroupId($default);
 
                 $this->customerRepository->save($customer);
             }
@@ -93,25 +130,19 @@ class SaveAfter implements ObserverInterface
      */
     private function createGroupCode()
     {
-        // Create the group code
-        $this->_groupCode = 'xCore Price List ' . $this->_customerPriceList;
+        $this->groupCode = 'xCore Price List ' . $this->customerPriceList;
 
-        // Add the vat class to the code
-        if ($this->_customerVatClass) $this->_groupCode .= ' ' . $this->_customerVatClass;
+        if ($this->customerVatClass) $this->groupCode .= ' ' . $this->customerVatClass;
     }
 
     private function createGroupIfNeeded()
     {
-        // Find the group
         $searchForGroup = $this->searchForGroup();
 
-        // If the group has been found, return ($this->_groupId has been set)
         if ($searchForGroup) return;
 
-        // Otherwise, set the tax class id needed for creating the group
         $this->setTaxClassId();
 
-        // Create the group ($this->_groupId will be set)
         $this->createGroup();
     }
 
@@ -123,15 +154,13 @@ class SaveAfter implements ObserverInterface
      */
     private function searchForGroup()
     {
-        // Find the group
         $searchCriteria  = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                       ->addFilter('customer_group_code', $this->_groupCode)
+                                                       ->addFilter('customer_group_code', $this->groupCode)
                                                        ->create();
         $groupCollection = $this->customerGroupRepository->getList($searchCriteria);
 
-        // If the group has been found, set the $this->_groupId and return true
         if ($groupCollection->getItems()) {
-            $this->_groupId = $groupCollection->getItems()[0]->getId();
+            $this->groupId = $groupCollection->getItems()[0]->getId();
             return true;
         }
 
@@ -146,8 +175,7 @@ class SaveAfter implements ObserverInterface
     {
         $className = null;
 
-        // Set the class name based on the vat class
-        switch ($this->_customerVatClass) {
+        switch ($this->customerVatClass) {
             case null:
                 $className = 'xCore No VAT';
                 break;
@@ -161,17 +189,15 @@ class SaveAfter implements ObserverInterface
                 throw new \Exception('No match on customer VAT class.');
         }
 
-        // Find the tax class
         $searchCriteria     = $this->searchCriteriaBuilder->setFilterGroups([])
                                                           ->addFilter('class_name', $className)
                                                           ->create();
         $taxClassCollection = $this->taxClassRepository->getList($searchCriteria);
 
-        // The tax class should be found, set the $this->_taxClassId and return
         if ($taxClassCollection->getItems()) {
             /** @var ClassModel $model */
-            $model             = array_values($taxClassCollection->getItems())[0];
-            $this->_taxClassId = $model->getClassId();
+            $model            = array_values($taxClassCollection->getItems())[0];
+            $this->taxClassId = $model->getClassId();
             return;
         }
 
@@ -186,13 +212,62 @@ class SaveAfter implements ObserverInterface
     {
         /** @var Group $group */
         $group = $this->customerGroupFactory->create();
-        $group->setCode($this->_groupCode);
-        $group->setTaxClassId($this->_taxClassId);
+        $group->setCode($this->groupCode);
+        $group->setTaxClassId($this->taxClassId);
 
-        // Save the group
         $newGroup = $this->customerGroupRepository->save($group);
 
-        // Set the $this->_groupId to that of the newly created group
-        $this->_groupId = $newGroup->getId();
+        $this->setProcessedToFalseForPriceList();
+
+        if ($this->runCronOnNewGroup())
+            $this->cronJob->execute();
+
+        $this->groupId = $newGroup->getId();
+    }
+
+    private function moduleEnabled()
+    {
+        $status = $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
+        if (!$status)
+            $this->logger->info('Dealer4Dealer Price List setting -- Module enabled = false: skipping Observer/Customer/SaveAfter::execute()');
+
+        return $status;
+    }
+
+    private function updateGroupEnabled()
+    {
+        $status = $this->helper->getCustomerConfig(CustomerConfig::ENABLED);
+        if (!$status)
+            $this->logger->info('Dealer4Dealer Price List setting -- Update group on customer save = false: skipping Observer/Customer/SaveAfter::execute()');
+
+        return $status;
+    }
+
+    private function getDefaultCustomerGroup()
+    {
+        $group = $this->helper->getCustomerConfig(CustomerConfig::DEFAULT);
+
+        return $group;
+    }
+
+    private function runCronOnNewGroup()
+    {
+        $bool = $this->helper->getCustomerConfig(CustomerConfig::RUN_CRON);
+
+        return $bool;
+    }
+
+    private function setProcessedToFalseForPriceList()
+    {
+        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                      ->addFilter(PriceListItemInterface::PRICE_LIST_ID, $this->customerPriceList)
+                                                      ->create();
+        $itemCollection = $this->priceListItemRepository->getList($searchCriteria);
+
+        foreach ($itemCollection->getItems() as $item) {
+
+            $item->setProcessed(0);
+            $this->priceListItemRepository->save($item);
+        }
     }
 }

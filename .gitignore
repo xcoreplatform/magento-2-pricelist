@@ -1,2 +1,5 @@
 # PHPstorm
 .idea
+
+# Logs and dumps
+bash.exe.stackdump

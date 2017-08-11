@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<config>
+    <default>
+        <pricelist>
+            <general>
+                <enabled>0</enabled>
+            </general>
+            <customer>
+                <enabled>1</enabled>
+                <default>1</default>
+                <run_cron>0</run_cron>
+            </customer>
+            <cron>
+                <empty_groups>0</empty_groups>
+            </cron>
+        </pricelist>
+    </default>
+</config>

@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+<config>
 	<preference for="Dealer4dealer\Pricelist\Api\PriceListRepositoryInterface" type="Dealer4dealer\Pricelist\Model\PriceListRepository"/>
+	<preference for="Dealer4dealer\Pricelist\Api\PriceListItemRepositoryInterface" type="Dealer4dealer\Pricelist\Model\PriceListItemRepository"/>
 	<preference for="Dealer4dealer\Pricelist\Api\Data\PriceListInterface" type="Dealer4dealer\Pricelist\Model\PriceList"/>
+	<preference for="Dealer4dealer\Pricelist\Api\Data\PriceListItemInterface" type="Dealer4dealer\Pricelist\Model\PriceListItem"/>
 	<preference for="Dealer4dealer\Pricelist\Api\Data\PriceListSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
+	<preference for="Dealer4dealer\Pricelist\Api\Data\PriceListItemSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
 </config>

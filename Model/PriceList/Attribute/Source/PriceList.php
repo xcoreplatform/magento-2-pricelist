@@ -1,5 +1,5 @@
 <?php
-        //Dealer4dealer\PriceList\Model\PriceList\Attribute\Source\PriceList
+
 namespace Dealer4dealer\Pricelist\Model\PriceList\Attribute\Source;
 
 use Dealer4dealer\Pricelist\Model\PriceListRepository;
@@ -32,7 +32,7 @@ class PriceList extends AbstractSource
     public function getAllOptions()
     {
         if ($this->_options === null) {
-            // Get all options, so no source filters (no ->addFilter('column', $value) before create())
+
             $searchCriteria = $this->_searchCriteriaBuilder->create();
 
             $collection = $this->_priceListRepository->getList($searchCriteria);

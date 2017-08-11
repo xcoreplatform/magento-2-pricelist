@@ -27,27 +27,41 @@ class InstallSchema implements InstallSchemaInterface
                 'id',
                 Table::TYPE_INTEGER,
                 null,
-                ['nullable' => false, 'identity' => true, 'auto_increment' => true, 'unsigned' => true, 'primary' => true],
+                [
+                    'nullable'       => false,
+                    'identity'       => true,
+                    'auto_increment' => true,
+                    'primary'        => true,
+                    'unsigned'       => true
+                ],
                 'Price List ID'
             )
             ->addColumn(
                 'guid',
                 Table::TYPE_TEXT,
                 36,
-                ['nullable' => false],
+                [
+                    'nullable' => false
+                ],
                 'Price List GUID'
             )
             ->addColumn(
                 'code',
                 Table::TYPE_TEXT,
                 null,
-                ['nullable' => false],
+                [
+                    'nullable' => false
+                ],
                 'Price List Code'
             )
             ->addIndex(
                 'IDX_D4D_PRICE_LIST_GUID',
-                ['guid'],
-                ['type' => 'UNIQUE']
+                [
+                    'guid'
+                ],
+                [
+                    'type' => 'UNIQUE'
+                ]
             )
             ->setComment('xCore Price List Table');
 
@@ -60,22 +74,40 @@ class InstallSchema implements InstallSchemaInterface
                 'id',
                 Table::TYPE_INTEGER,
                 null,
-                ['nullable' => false, 'identity' => true, 'auto_increment' => true, 'primary' => true, 'unsigned' => true],
+                [
+                    'nullable'       => false,
+                    'identity'       => true,
+                    'auto_increment' => true,
+                    'primary'        => true,
+                    'unsigned'       => true
+                ],
                 'Price List Item ID'
             )
             ->addColumn(
                 'price_list_id',
                 Table::TYPE_INTEGER,
                 10,
-                ['nullable' => false, 'unsigned' => true],
+                [
+                    'nullable' => false,
+                    'unsigned' => true
+                ],
                 'Price List ID'
             )
             ->addColumn(
                 'product_id',
                 Table::TYPE_INTEGER,
                 10,
-                ['nullable' => false, 'unsigned' => true],
+                [
+                    'unsigned' => true
+                ],
                 'Price List Item Product ID'
+            )
+            ->addColumn(
+                'product_sku',
+                Table::TYPE_TEXT,
+                64,
+                [],
+                'Price List Item Product SKU'
             )
             ->addColumn(
                 'qty',
@@ -103,22 +135,37 @@ class InstallSchema implements InstallSchemaInterface
             )
             ->addColumn(
                 'start_date',
-                Table::TYPE_DATETIME,
+                Table::TYPE_DATE,
                 null,
                 [],
                 'Price List Item Start Date'
             )
             ->addColumn(
                 'end_date',
-                Table::TYPE_DATETIME,
+                Table::TYPE_DATE,
                 null,
                 [],
                 'Price List Item End Date'
             )
+            ->addColumn(
+                'processed',
+                Table::TYPE_BOOLEAN,
+                null,
+                [
+                    'default' => 0
+                ],
+                'Price List Item End Date'
+            )
             ->addIndex(
                 'IDX_PRICE_LIST_ID_PRODUCT_ID_QTY',
-                ['price_list_id', 'product_id', 'qty'],
-                ['type' => 'UNIQUE']
+                [
+                    'price_list_id',
+                    'product_id',
+                    'qty'
+                ],
+                [
+                    'type' => 'UNIQUE'
+                ]
             )
             ->addForeignKey(
                 'FK_PRICE_LIST_ID',

@@ -4,14 +4,18 @@ namespace Dealer4dealer\Pricelist\Setup;
 
 use Magento\Customer\Setup\CustomerSetup;
 use Magento\Customer\Setup\CustomerSetupFactory;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Setup\InstallDataInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Tax\Model\ClassModel;
+use Magento\Tax\Model\TaxClass\Repository as TaxClassRepository;
 
 class InstallData implements InstallDataInterface
 {
     private $customerSetupFactory;
+    private $searchCriteriaBuilder;
+    private $taxClassRepository;
 
     /**
      * {@inheritdoc}
@@ -26,7 +30,7 @@ class InstallData implements InstallDataInterface
 
         $customerSetup->addAttribute('customer', 'price_list', [
             'type'     => 'int',
-            'label'    => 'price_list',
+            'label'    => 'Price List',
             'input'    => 'select',
             'source'   => 'Dealer4dealer\Pricelist\Model\PriceList\Attribute\Source\PriceList',
             'required' => false,
@@ -44,7 +48,7 @@ class InstallData implements InstallDataInterface
 
         $customerSetup->addAttribute('customer', 'vat_class', [
             'type'     => 'varchar',
-            'label'    => 'vat_class',
+            'label'    => 'VAT Class',
             'input'    => 'select',
             'source'   => 'Dealer4dealer\Pricelist\Model\Customer\Attribute\Source\VatClass',
             'required' => false,
@@ -79,6 +83,15 @@ class InstallData implements InstallDataInterface
             ],
         ];
         foreach ($data as $row) {
+            // Find the tax class
+            $searchCriteria     = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                              ->addFilter('class_name', $row['class_name'])
+                                                              ->create();
+            $taxClassCollection = $this->taxClassRepository->getList($searchCriteria);
+
+            // If the tax class already exists, do not add it again.
+            if ($taxClassCollection->getItems()) continue;
+
             $setup->getConnection()->insert($setup->getTable('tax_class'), $row);
         }
 
@@ -87,12 +100,18 @@ class InstallData implements InstallDataInterface
     /**
      * Constructor
      *
-     * @param \Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory
+     * @param CustomerSetupFactory $customerSetupFactory
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param TaxClassRepository $taxRepository
      */
     public function __construct(
-        CustomerSetupFactory $customerSetupFactory
+        CustomerSetupFactory $customerSetupFactory,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        TaxClassRepository $taxRepository
     )
     {
-        $this->customerSetupFactory = $customerSetupFactory;
+        $this->customerSetupFactory  = $customerSetupFactory;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->taxClassRepository    = $taxRepository;
     }
 }

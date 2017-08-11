@@ -13,6 +13,6 @@ class PriceListItem extends AbstractDb
      */
     protected function _construct()
     {
-        $this->_init('dealer4dealer_price_list_item', 'price_list_item_id');
+        $this->_init('dealer4dealer_price_list_item', 'id');
     }
 }

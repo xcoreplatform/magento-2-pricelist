@@ -1,7 +1,4 @@
 <?xml version="1.0" ?>
 <config>
-	<extension_attributes for="Magento\Customer\Api\Data\CustomerInterface">
-		<attribute code="price_list" type="int"/>
-		<attribute code="vat_class" type="string"/>
-	</extension_attributes>
+
 </config>

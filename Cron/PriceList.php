@@ -2,13 +2,13 @@
 
 namespace Dealer4dealer\Pricelist\Cron;
 
-use Dealer4dealer\Pricelist\Api\Data\PriceListInterface;
-use Dealer4dealer\Pricelist\Api\Data\PriceListItemInterface;
-use Dealer4dealer\Pricelist\Api\PriceListItemRepositoryInterface;
-use Dealer4dealer\Pricelist\Api\PriceListRepositoryInterface;
 use Dealer4dealer\Pricelist\Helper\CronConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
 use Dealer4dealer\Pricelist\Helper\GeneralConfig;
+use Dealer4dealer\Xcore\Api\Data\PriceListInterface;
+use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
+use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
+use Dealer4dealer\Xcore\Api\PriceListRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterface;
 use Magento\Catalog\Model\Product\TierPriceManagement;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;

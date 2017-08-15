@@ -2,12 +2,12 @@
 
 namespace Dealer4dealer\Pricelist\Observer\Customer;
 
-use Dealer4dealer\Pricelist\Api\Data\PriceListItemInterface;
-use Dealer4dealer\Pricelist\Api\PriceListItemRepositoryInterface;
 use Dealer4dealer\Pricelist\Cron\PriceList;
 use Dealer4dealer\Pricelist\Helper\CustomerConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
 use Dealer4dealer\Pricelist\Helper\GeneralConfig;
+use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
+use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Model\Data\Customer;
 use Magento\Customer\Model\Data\Group;

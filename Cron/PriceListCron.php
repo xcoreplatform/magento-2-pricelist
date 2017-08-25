@@ -2,9 +2,13 @@
 
 namespace Dealer4dealer\Pricelist\Cron;
 
-use Dealer4dealer\Pricelist\Helper\CronConfig;
+use Dealer4dealer\Pricelist\Api\PriceListCronInterface;
+use Dealer4dealer\Pricelist\Helper\Codes\CronConfig;
+use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
-use Dealer4dealer\Pricelist\Helper\GeneralConfig;
+use Dealer4dealer\Pricelist\Model\CronResult;
+use Dealer4dealer\Pricelist\Model\CustomerGroup;
+use Dealer4dealer\Pricelist\Model\XcoreTaxClass;
 use Dealer4dealer\Xcore\Api\Data\PriceListInterface;
 use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
@@ -20,8 +24,14 @@ use Magento\Tax\Api\Data\TaxClassInterface;
 use Magento\Tax\Model\TaxClass\Repository as TaxClassRepository;
 use Psr\Log\LoggerInterface;
 
-class PriceList
+class PriceListCron implements PriceListCronInterface
 {
+    const DISABLED_MSG      = 'Dealer4Dealer Price List setting -- Module enabled = false: skipping Cron/PriceListCron::execute()';
+    const EXECUTE_MSG       = 'Executing Cron : Creating Tier Prices based on xCore Price Lists';
+    const COMPLETED_MSG     = 'Completed Cron : Removed %s and added/updated %s Tier Price(s)';
+    const FAILED_REMOVE_MSG = 'Failed to remove tier price with SKU %s for customer group %s';
+    const FAILED_ADD_MSG    = 'Failed to add tier price with SKU %s for customer group %s';
+
     private $logger;
     private $helper;
     private $searchCriteriaBuilder;
@@ -34,7 +44,7 @@ class PriceList
 
     private $allPriceLists;
     private $activePriceListIds;
-    /** @var CustomerGroupModel[] $allCustomerGroups */
+    /** @var CustomerGroup[] $allCustomerGroups */
     private $allCustomerGroups;
     private $allTaxClasses;
 
@@ -79,13 +89,13 @@ class PriceList
     /**
      * Execute the cron
      *
-     * @return mixed
+     * @return \Dealer4dealer\Pricelist\Model\CronResultInterface|string
      */
     public function execute()
     {
-        if ($this->moduleEnabled() == false) return;
+        if ($this->moduleEnabled() == false) return self::DISABLED_MSG;
 
-        $this->logger->info("Executing Cron : Creating Tier Prices based on xCore Price Lists");
+        $this->logger->info(self::EXECUTE_MSG);
 
         $this->setAllLists();
 
@@ -106,9 +116,13 @@ class PriceList
                 $this->createTierPrices($sku, $process['add']);
         }
 
-        $this->logger->info(sprintf('Completed Cron : Removed %s and added/updated %s Tier Price(s)', $this->removedTierPrices, $this->addedTierPrices));
+        $result = new CronResult;
+        $result->setRemoved($this->removedTierPrices);
+        $result->setAddedOrUpdated($this->addedTierPrices);
 
-        return;
+        $this->logger->info(sprintf(self::COMPLETED_MSG, $result->getRemoved(), $result->getAddedOrUpdated()));
+
+        return $result;
     }
 
     /**
@@ -126,7 +140,6 @@ class PriceList
             foreach ($groups as $group) {
 
                 $this->removeTierPricesForGroup($sku, $group, $priceListItems);
-
             }
         }
     }
@@ -135,7 +148,7 @@ class PriceList
      * Removes tier prices for a specific customer group.
      *
      * @param string $sku
-     * @param CustomerGroupModel $group
+     * @param CustomerGroup $group
      * @param PriceListItemInterface[] $priceListItems
      */
     private function removeTierPricesForGroup($sku, $group, $priceListItems)
@@ -149,11 +162,18 @@ class PriceList
 
                 if ($tierPrice->getQty() == $priceListItem->getQty()) {
 
-                    $this->tierPriceManagement->remove($sku, $group->id, $priceListItem->getQty());
+                    try {
 
-                    $this->priceListItemRepository->delete($priceListItem);
+                        $this->tierPriceManagement->remove($sku, $group->id, $priceListItem->getQty());
 
-                    $this->removedTierPrices++;
+                        $this->priceListItemRepository->delete($priceListItem);
+
+                        $this->removedTierPrices++;
+
+                    } catch (\Exception $exception) {
+
+                        $this->logger->error(sprintf(self::FAILED_REMOVE_MSG, $sku, $group->id));
+                    }
                 }
             }
         }
@@ -182,19 +202,26 @@ class PriceList
      * Creates tier prices for a specific customer group.
      *
      * @param string $sku
-     * @param CustomerGroupModel $group
+     * @param CustomerGroup $group
      * @param PriceListItemInterface[] $priceListItems
      */
     private function createTierPricesForGroup($sku, $group, $priceListItems)
     {
         foreach ($priceListItems as $priceListItem) {
 
-            $this->tierPriceManagement->add($sku, $group->id, $priceListItem->getPrice(), $priceListItem->getQty());
+            try {
+
+                $this->tierPriceManagement->add($sku, $group->id, $priceListItem->getPrice(), $priceListItem->getQty());
+
+                $this->addedTierPrices++;
+
+            } catch (\Exception $exception) {
+
+                $this->logger->error(sprintf(self::FAILED_ADD_MSG, $sku, $group->id));
+            }
 
             $priceListItem->setProcessed(1);
             $this->priceListItemRepository->save($priceListItem);
-
-            $this->addedTierPrices++;
         }
     }
 
@@ -277,7 +304,7 @@ class PriceList
 
             $priceListId = filter_var($item->getCode(), FILTER_SANITIZE_NUMBER_INT);
 
-            $group               = new CustomerGroupModel();
+            $group               = new CustomerGroup();
             $group->id           = $item->getId();
             $group->priceListId  = $priceListId;
             $group->taxClassId   = $item->getTaxClassId();
@@ -330,8 +357,8 @@ class PriceList
     /**
      * Will create 'empty' groups. Possible groups for Price List x are:
      * - xCore Price List x
-     * - xCore Price List x incl
-     * - xCore Price List x excl
+     * - xCore Price List x including
+     * - xCore Price List x excluding
      *
      * If no customers are linked to price list x with a specific VAT class,
      * the group itself will not have been created. This method will create
@@ -378,7 +405,7 @@ class PriceList
      *
      * @param null $priceListId
      * @param null $taxClassId
-     * @return CustomerGroupModel[]
+     * @return CustomerGroup[]
      */
     private function getGroups($priceListId = null, $taxClassId = null)
     {
@@ -405,10 +432,10 @@ class PriceList
 
         switch ($taxClassGroup->getClassName()) {
             case XcoreTaxClass::INCL_VAT:
-                $code .= ' incl';
+                $code .= ' including';
                 break;
             case XcoreTaxClass::EXCL_VAT:
-                $code .= ' excl';
+                $code .= ' excluding';
                 break;
         }
 
@@ -425,7 +452,7 @@ class PriceList
         $status = $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
 
         if (!$status)
-            $this->logger->info('Dealer4Dealer Price List setting -- Module enabled = false: skipping Cron/PriceList::execute()');
+            $this->logger->info(self::DISABLED_MSG);
 
         return $status;
     }
@@ -436,24 +463,4 @@ class PriceList
 
         return $bool;
     }
-}
-
-/**
- *
- * Below are some simple classes used in the main class.
- *
- */
-class CustomerGroupModel
-{
-    public $id;
-    public $priceListId;
-    public $taxClassId;
-    public $taxClassName;
-}
-
-class XcoreTaxClass
-{
-    const NO_VAT   = 'xCore No VAT';
-    const INCL_VAT = 'xCore Incl VAT';
-    const EXCL_VAT = 'xCore Excl VAT';
 }

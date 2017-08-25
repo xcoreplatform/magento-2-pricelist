@@ -2,10 +2,10 @@
 
 namespace Dealer4dealer\Pricelist\Observer\Customer;
 
-use Dealer4dealer\Pricelist\Cron\PriceList;
-use Dealer4dealer\Pricelist\Helper\CustomerConfig;
+use Dealer4dealer\Pricelist\Cron\PriceListCron;
+use Dealer4dealer\Pricelist\Helper\Codes\CustomerConfig;
+use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
-use Dealer4dealer\Pricelist\Helper\GeneralConfig;
 use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
@@ -51,7 +51,7 @@ class SaveAfter implements ObserverInterface
      * @param GroupInterfaceFactory $groupFactory
      * @param TaxClassRepository $taxRepository
      * @param PriceListItemRepositoryInterface $priceListItemRepository
-     * @param PriceList $cronJob
+     * @param PriceListCron $cronJob
      */
     public function __construct(LoggerInterface $logger,
                                 Data $helper,
@@ -61,7 +61,7 @@ class SaveAfter implements ObserverInterface
                                 GroupInterfaceFactory $groupFactory,
                                 TaxClassRepository $taxRepository,
                                 PriceListItemRepositoryInterface $priceListItemRepository,
-                                PriceList $cronJob)
+                                PriceListCron $cronJob)
     {
         $this->logger                  = $logger;
         $this->helper                  = $helper;
@@ -179,11 +179,11 @@ class SaveAfter implements ObserverInterface
             case null:
                 $className = 'xCore No VAT';
                 break;
-            case 'incl':
-                $className = 'xCore Incl VAT';
+            case 'including':
+                $className = 'xCore Including VAT';
                 break;
-            case 'excl':
-                $className = 'xCore Excl VAT';
+            case 'excluding':
+                $className = 'xCore Excluding VAT';
                 break;
             default:
                 throw new \Exception('No match on customer VAT class.');

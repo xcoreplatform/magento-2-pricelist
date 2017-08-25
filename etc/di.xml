@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
 <config>
-
+    <preference for="Dealer4dealer\Pricelist\Api\PriceListCronInterface" type="Dealer4dealer\Pricelist\Cron\PriceListCron"/>
+    <preference for="Dealer4dealer\Pricelist\Api\HelperDataInterface" type="Dealer4dealer\Pricelist\Helper\Data"/>
 </config>

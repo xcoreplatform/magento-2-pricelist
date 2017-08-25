@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <config>
 	<group id="default">
-		<job name="xcore_generate_tier_prices" instance="Dealer4dealer\Pricelist\Cron\PriceList" method="execute">
-			<schedule>0 0 * * *</schedule>
+		<job name="xcore_generate_tier_prices" instance="Dealer4dealer\Pricelist\Cron\PriceListCron" method="execute">
+			<schedule>0 3 * * *</schedule>
 		</job>
 	</group>
 </config>

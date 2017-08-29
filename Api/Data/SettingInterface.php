@@ -1,6 +1,6 @@
 <?php
 
-namespace Dealer4dealer\Pricelist\Model;
+namespace Dealer4dealer\Pricelist\Api\Data;
 
 interface SettingInterface
 {
@@ -11,7 +11,7 @@ interface SettingInterface
 
     /**
      * @var string $field
-     * @return \Dealer4dealer\Pricelist\Model\SettingInterface
+     * @return \Dealer4dealer\Pricelist\Api\Data\SettingInterface
      */
     public function setField($field);
 
@@ -22,7 +22,7 @@ interface SettingInterface
 
     /**
      * @var int $value
-     * @return \Dealer4dealer\Pricelist\Model\SettingInterface
+     * @return \Dealer4dealer\Pricelist\Api\Data\SettingInterface
      */
     public function setValue($value);
 }

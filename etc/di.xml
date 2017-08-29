@@ -1,5 +1,7 @@
 <?xml version="1.0" ?>
-<config>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Dealer4dealer\Pricelist\Api\PriceListCronInterface" type="Dealer4dealer\Pricelist\Cron\PriceListCron"/>
+    <preference for="Dealer4dealer\Pricelist\Api\Data\CronResultInterface" type="Dealer4dealer\Pricelist\Model\CronResult"/>
     <preference for="Dealer4dealer\Pricelist\Api\HelperDataInterface" type="Dealer4dealer\Pricelist\Helper\Data"/>
+    <preference for="Dealer4dealer\Pricelist\Api\Data\SettingInterface" type="Dealer4dealer\Pricelist\Model\Setting"/>
 </config>

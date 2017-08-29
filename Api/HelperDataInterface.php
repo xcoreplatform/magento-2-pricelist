@@ -23,7 +23,7 @@ interface HelperDataInterface
     public function getCronConfig($code);
 
     /**
-     * @return \Dealer4dealer\Pricelist\Model\SettingInterface[]
+     * @return \Dealer4dealer\Pricelist\Api\Data\SettingInterface[]
      */
     public function getAll();
 }

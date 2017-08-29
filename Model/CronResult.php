@@ -2,6 +2,8 @@
 
 namespace Dealer4dealer\Pricelist\Model;
 
+use Dealer4dealer\Pricelist\Api\Data\CronResultInterface;
+
 class CronResult implements CronResultInterface
 {
     protected $removed;

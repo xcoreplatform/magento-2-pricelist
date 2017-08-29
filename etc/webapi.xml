@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<routes>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../app/code/Magento/Webapi/etc/webapi.xsd">
     <route url="/V1/dealer4dealer/generate/tierprices" method="GET">
         <service class="Dealer4dealer\Pricelist\Api\PriceListCronInterface" method="execute"/>
         <resources>

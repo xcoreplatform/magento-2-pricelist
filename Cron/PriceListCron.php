@@ -89,7 +89,7 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Execute the cron
      *
-     * @return \Dealer4dealer\Pricelist\Model\CronResultInterface|string
+     * @return \Dealer4dealer\Pricelist\Api\Data\CronResultInterface|string
      */
     public function execute()
     {

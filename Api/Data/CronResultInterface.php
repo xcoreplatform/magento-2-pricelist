@@ -1,6 +1,6 @@
 <?php
 
-namespace Dealer4dealer\Pricelist\Model;
+namespace Dealer4dealer\Pricelist\Api\Data;
 
 interface CronResultInterface
 {
@@ -11,7 +11,7 @@ interface CronResultInterface
 
     /**
      * @var int $removed
-     * @return \Dealer4dealer\Pricelist\Model\CronResultInterface
+     * @return \Dealer4dealer\Pricelist\Api\Data\CronResultInterface
      */
     public function setRemoved($removed);
 
@@ -22,7 +22,7 @@ interface CronResultInterface
 
     /**
      * @var int $added
-     * @return \Dealer4dealer\Pricelist\Model\CronResultInterface
+     * @return \Dealer4dealer\Pricelist\Api\Data\CronResultInterface
      */
     public function setAddedOrUpdated($added);
 }

@@ -164,7 +164,7 @@ class PriceListCron implements PriceListCronInterface
 
                     try {
 
-                        $this->tierPriceManagement->remove($sku, $group->id, $priceListItem->getQty());
+                        $this->tierPriceManagement->remove($sku, $group->id, floatval($priceListItem->getQty()));
 
                         $this->priceListItemRepository->delete($priceListItem);
 
@@ -211,7 +211,7 @@ class PriceListCron implements PriceListCronInterface
 
             try {
 
-                $this->tierPriceManagement->add($sku, $group->id, $priceListItem->getPrice(), $priceListItem->getQty());
+                $this->tierPriceManagement->add($sku, $group->id, floatval($priceListItem->getPrice()), floatval($priceListItem->getQty()));
 
                 $this->addedTierPrices++;
 

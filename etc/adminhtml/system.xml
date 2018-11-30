@@ -35,8 +35,7 @@
                     <label>Default customer group</label>
                     <source_model>Magento\Customer\Model\Customer\Source\Group</source_model>
                     <comment>
-                        If 'Update group on customer save' is set to 'Yes', this module will set the customer group to this value, if no xCore
-                        Price List is selected for the customer.
+                        This settings has been deprecated and doesn't do anything anymore.
                     </comment>
                 </field>
                 <field id="run_cron" translate="label" type="select" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">

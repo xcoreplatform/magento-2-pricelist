@@ -103,22 +103,9 @@ class SaveAfter implements ObserverInterface
 
             $this->createGroupIfNeeded();
 
-
             if ($this->customerGroupId != $this->groupId) {
 
                 $customer->setGroupId($this->groupId);
-
-                $this->customerRepository->save($customer);
-            }
-        }
-
-        if (!$this->customerPriceList) {
-
-            $default = $this->getDefaultCustomerGroup();
-
-            if ($this->customerGroupId != $default) {
-
-                $customer->setGroupId($default);
 
                 $this->customerRepository->save($customer);
             }

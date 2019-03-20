@@ -228,11 +228,12 @@ class SaveAfter implements ObserverInterface
             $this->logger->info('Dealer4Dealer Price List setting -- Update group on customer save = false: skipping Observer/Customer/SaveAfter::execute()');
 
         return $status;
+        return $status;
     }
 
     private function getDefaultCustomerGroup()
     {
-        $group = $this->helper->getCustomerConfig(CustomerConfig::DEFAULT);
+        $group = $this->helper->getCustomerConfig(CustomerConfig::C_DEFAULT);
 
         return $group;
     }

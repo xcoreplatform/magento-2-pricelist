@@ -45,8 +45,8 @@ class Data extends AbstractHelper implements HelperDataInterface
         $customerEnabled->setValue($this->getCustomerConfig(CustomerConfig::ENABLED));
 
         $customerDefault = new Setting;
-        $customerDefault->setField(self::XML_PATH_CUSTOMER . CustomerConfig::DEFAULT);
-        $customerDefault->setValue($this->getCustomerConfig(CustomerConfig::DEFAULT));
+        $customerDefault->setField(self::XML_PATH_CUSTOMER . CustomerConfig::C_DEFAULT);
+        $customerDefault->setValue($this->getCustomerConfig(CustomerConfig::C_DEFAULT));
 
         $customerRunCron = new Setting;
         $customerRunCron->setField(self::XML_PATH_CUSTOMER . CustomerConfig::RUN_CRON);

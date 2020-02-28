@@ -108,7 +108,6 @@ class PriceListCron implements PriceListCronInterface
         $this->setItemsToAdd();
 
         foreach ($this->itemsToProcess as $sku => $process) {
-
             if (isset($process['remove']))
                 $this->removeTierPrices($sku, $process['remove']);
 
@@ -134,11 +133,9 @@ class PriceListCron implements PriceListCronInterface
     private function removeTierPrices($sku, $process)
     {
         foreach ($process as $priceList => $priceListItems) {
-
             $groups = $this->getGroups($priceList);
 
             foreach ($groups as $group) {
-
                 $this->removeTierPricesForGroup($sku, $group, $priceListItems);
             }
         }
@@ -157,21 +154,15 @@ class PriceListCron implements PriceListCronInterface
 
         /** @var ProductTierPriceInterface $tierPrice */
         foreach ($tierPrices as $tierPrice) {
-
             foreach ($priceListItems as $priceListItem) {
-
                 if ($tierPrice->getQty() == $priceListItem->getQty()) {
-
                     try {
-
                         $this->tierPriceManagement->remove($sku, $group->id, floatval($priceListItem->getQty()));
 
                         $this->priceListItemRepository->delete($priceListItem);
 
                         $this->removedTierPrices++;
-
                     } catch (\Exception $exception) {
-
                         $this->logger->error(sprintf(self::FAILED_REMOVE_MSG, $sku, $group->id));
                     }
                 }
@@ -188,11 +179,9 @@ class PriceListCron implements PriceListCronInterface
     private function createTierPrices($sku, $process)
     {
         foreach ($process as $priceList => $priceListItems) {
-
             $groups = $this->getGroups($priceList);
 
             foreach ($groups as $group) {
-
                 $this->createTierPricesForGroup($sku, $group, $priceListItems);
             }
         }
@@ -208,22 +197,20 @@ class PriceListCron implements PriceListCronInterface
     private function createTierPricesForGroup($sku, $group, $priceListItems)
     {
         foreach ($priceListItems as $priceListItem) {
-
             try {
-
                 try {
                     $this->tierPriceManagement->remove($sku, $group->id, floatval($priceListItem->getQty()));
                 } catch (\Exception $exception) {
+                    $this->logger->info($exception->getMessage());
                     // As there's no addOrUpdate, we first try to remove the tier price before adding it.
                 }
 
                 $this->tierPriceManagement->add($sku, $group->id, floatval($priceListItem->getPrice()), floatval($priceListItem->getQty()));
 
                 $this->addedTierPrices++;
-
             } catch (\Exception $exception) {
-
                 $this->logger->error(sprintf(self::FAILED_ADD_MSG, $sku, $group->id));
+                $this->logger->info($exception->getMessage());
             }
 
             $priceListItem->setProcessed(1);
@@ -245,7 +232,6 @@ class PriceListCron implements PriceListCronInterface
         $itemCollection = $this->priceListItemRepository->getList($searchCriteria);
 
         foreach ($itemCollection->getItems() as $item) {
-
             $this->itemsToProcess[$item->getProductSku()]['remove'][$item->getPriceListId()][] = $item;
         }
     }
@@ -263,9 +249,7 @@ class PriceListCron implements PriceListCronInterface
         $itemCollection = $this->priceListItemRepository->getList($searchCriteria);
 
         foreach ($itemCollection->getItems() as $item) {
-
             if ($item->getEndDate() != null && $item->getEndDate() < date('Y-m-d')) {
-
                 $this->priceListItemRepository->delete($item);
 
                 $this->removedTierPrices++;
@@ -292,7 +276,6 @@ class PriceListCron implements PriceListCronInterface
         $listCollection = $this->priceListRepository->getList($searchCriteria);
 
         foreach ($listCollection->getItems() as $item) {
-
             $this->allPriceLists[] = $item;
         }
     }
@@ -307,7 +290,6 @@ class PriceListCron implements PriceListCronInterface
         $groupCollection = $this->customerGroupRepository->getList($searchCriteria);
 
         foreach ($groupCollection->getItems() as $item) {
-
             $priceListId = filter_var($item->getCode(), FILTER_SANITIZE_NUMBER_INT);
 
             $group               = new CustomerGroup();
@@ -329,9 +311,7 @@ class PriceListCron implements PriceListCronInterface
         $list = [];
 
         foreach ($this->allCustomerGroups as $group) {
-
             if (!isset($list[$group->priceListId])) {
-
                 $list[$group->priceListId] = 'added';
 
                 $this->activePriceListIds .= $group->priceListId . ',';
@@ -355,7 +335,6 @@ class PriceListCron implements PriceListCronInterface
         $taxClassCollection = $this->taxClassRepository->getList($searchCriteria);
 
         foreach ($taxClassCollection->getItems() as $item) {
-
             $this->allTaxClasses[] = $item;
         }
     }
@@ -389,10 +368,8 @@ class PriceListCron implements PriceListCronInterface
 
         /** @var PriceListInterface $priceList */
         foreach ($this->allPriceLists as $priceList) {
-
             /** @var TaxClassInterface $taxClassGroup */
             foreach ($this->allTaxClasses as $taxClassGroup) {
-
                 if ($this->getGroups($priceList->getId(), $taxClassGroup->getClassId()))
                     continue;
 
@@ -418,7 +395,6 @@ class PriceListCron implements PriceListCronInterface
         $groups = [];
 
         foreach ($this->allCustomerGroups as $group) {
-
             if (($priceListId == null || $group->priceListId == $priceListId) && ($taxClassId == null || $group->taxClassId == $taxClassId))
                 $groups[] = $group;
         }

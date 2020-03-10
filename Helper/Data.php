@@ -17,7 +17,6 @@ class Data extends AbstractHelper implements HelperDataInterface
 {
     protected $storeManager;
     protected $objectManager;
-
     const XML_PATH_GENERAL  = 'pricelist/general/';
     const XML_PATH_CUSTOMER = 'pricelist/customer/';
     const XML_PATH_CRON     = 'pricelist/cron/';
@@ -56,12 +55,17 @@ class Data extends AbstractHelper implements HelperDataInterface
         $cronEmptyGroups->setField(self::XML_PATH_CRON . CronConfig::EMPTY_GROUPS);
         $cronEmptyGroups->setValue($this->getCronConfig(CronConfig::EMPTY_GROUPS));
 
+        $cronItemsPerRun = new Setting;
+        $cronItemsPerRun->setField(self::XML_PATH_CRON . CronConfig::ITEMS_PER_RUN);
+        $cronItemsPerRun->setValue($this->getCronConfig(CronConfig::ITEMS_PER_RUN));
+
         return [
             $generalEnabled,
             $customerEnabled,
             $customerDefault,
             $customerRunCron,
-            $cronEmptyGroups
+            $cronEmptyGroups,
+            $cronItemsPerRun
         ];
     }
 

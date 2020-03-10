@@ -31,7 +31,6 @@ class PriceListCron implements PriceListCronInterface
     const COMPLETED_MSG     = 'Completed Cron : Removed %s and added/updated %s Tier Price(s)';
     const FAILED_REMOVE_MSG = 'Failed to remove tier price with SKU %s for customer group %s';
     const FAILED_ADD_MSG    = 'Failed to add tier price with SKU %s for customer group %s';
-
     private $logger;
     private $helper;
     private $searchCriteriaBuilder;
@@ -41,13 +40,11 @@ class PriceListCron implements PriceListCronInterface
     private $priceListRepository;
     private $priceListItemRepository;
     private $tierPriceManagement;
-
     private $allPriceLists;
     private $activePriceListIds;
     /** @var CustomerGroup[] $allCustomerGroups */
     private $allCustomerGroups;
     private $allTaxClasses;
-
     private $itemsToProcess    = [];
     private $removedTierPrices = 0;
     private $addedTierPrices   = 0;
@@ -55,15 +52,15 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Constructor.
      *
-     * @param LoggerInterface $logger
-     * @param Data $helper
-     * @param SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param GroupRepository $groupRepository
+     * @param LoggerInterface                   $logger
+     * @param Data                              $helper
+     * @param SearchCriteriaBuilder             $searchCriteriaBuilder
+     * @param GroupRepository                   $groupRepository
      * @param GroupInterfaceFactory|BaseFactory $groupFactory
-     * @param TaxClassRepository $taxRepository
-     * @param PriceListRepositoryInterface $priceListRepository
-     * @param PriceListItemRepositoryInterface $priceListItemRepository
-     * @param TierPriceManagement $tierPriceManagement
+     * @param TaxClassRepository                $taxRepository
+     * @param PriceListRepositoryInterface      $priceListRepository
+     * @param PriceListItemRepositoryInterface  $priceListItemRepository
+     * @param TierPriceManagement               $tierPriceManagement
      */
     public function __construct(LoggerInterface $logger,
                                 Data $helper,
@@ -127,7 +124,7 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Removes tier prices.
      *
-     * @param string $sku
+     * @param string                     $sku
      * @param PriceListItemInterface[][] $process
      */
     private function removeTierPrices($sku, $process)
@@ -144,8 +141,8 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Removes tier prices for a specific customer group.
      *
-     * @param string $sku
-     * @param CustomerGroup $group
+     * @param string                   $sku
+     * @param CustomerGroup            $group
      * @param PriceListItemInterface[] $priceListItems
      */
     private function removeTierPricesForGroup($sku, $group, $priceListItems)
@@ -173,7 +170,7 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Creates tier prices.
      *
-     * @param string $sku
+     * @param string                     $sku
      * @param PriceListItemInterface[][] $process
      */
     private function createTierPrices($sku, $process)
@@ -190,8 +187,8 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Creates tier prices for a specific customer group.
      *
-     * @param string $sku
-     * @param CustomerGroup $group
+     * @param string                   $sku
+     * @param CustomerGroup            $group
      * @param PriceListItemInterface[] $priceListItems
      */
     private function createTierPricesForGroup($sku, $group, $priceListItems)
@@ -242,10 +239,16 @@ class PriceListCron implements PriceListCronInterface
      */
     private function setItemsToAdd()
     {
-        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                      ->addFilter(PriceListItemInterface::PROCESSED, '0')
-                                                      ->addFilter(PriceListItemInterface::PRICE_LIST_ID, $this->activePriceListIds, 'in')
-                                                      ->create();
+        $this->searchCriteriaBuilder->setFilterGroups([])
+                                    ->addFilter(PriceListItemInterface::PROCESSED, '0')
+                                    ->addFilter(PriceListItemInterface::PRICE_LIST_ID, $this->activePriceListIds, 'in');
+
+        if ($itemsPerRun = $this->itemsPerRun() > 0) {
+            $this->searchCriteriaBuilder->setPageSize($itemsPerRun);
+        }
+
+        $searchCriteria = $this->searchCriteriaBuilder->create();
+
         $itemCollection = $this->priceListItemRepository->getList($searchCriteria);
 
         foreach ($itemCollection->getItems() as $item) {
@@ -406,7 +409,7 @@ class PriceListCron implements PriceListCronInterface
      * Creates a group and adds it to the database.
      *
      * @param PriceListInterface $priceList
-     * @param TaxClassInterface $taxClassGroup
+     * @param TaxClassInterface  $taxClassGroup
      */
     private function createGroup(PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
     {
@@ -444,5 +447,10 @@ class PriceListCron implements PriceListCronInterface
         $bool = $this->helper->getCronConfig(CronConfig::EMPTY_GROUPS);
 
         return $bool;
+    }
+
+    private function itemsPerRun()
+    {
+        return $this->helper->getCronConfig(CronConfig::ITEMS_PER_RUN);
     }
 }

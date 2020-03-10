@@ -12,6 +12,7 @@
             </customer>
             <cron>
                 <empty_groups>0</empty_groups>
+                <items_per_run>5000</items_per_run>
             </cron>
         </pricelist>
     </default>

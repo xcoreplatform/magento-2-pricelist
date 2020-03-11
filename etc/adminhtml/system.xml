@@ -18,6 +18,7 @@
                         States if this module is enabled.
                     </comment>
                 </field>
+
             </group>
             <group id="customer" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="0" showInStore="0">
                 <label>Customer</label>
@@ -58,6 +59,14 @@
                         is set to 'Yes', it will create groups even if there aren't any customers belonging to that group. This will result
                         in Tier Prices being created for these groups. As soon as a customer is added to the groups, the Tier Prices will
                         be in place.
+                    </comment>
+                </field>
+                <field id="items_per_run" translate="label" type="text" sortOrder="4" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Maximum amount of items to process every run. (Default is 5000 per hour)</label>
+                    <comment>
+                        By default the cron job runs every hour and will process 5000 price list items to tier prices.
+                        Increasing this number might result in higher memory usage causing out-of-memory issues.
+                        If you already have this issue, lowering the value might resolve it.
                     </comment>
                 </field>
             </group>

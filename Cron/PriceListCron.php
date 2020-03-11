@@ -243,7 +243,7 @@ class PriceListCron implements PriceListCronInterface
                                     ->addFilter(PriceListItemInterface::PROCESSED, '0')
                                     ->addFilter(PriceListItemInterface::PRICE_LIST_ID, $this->activePriceListIds, 'in');
 
-        if ($itemsPerRun = $this->itemsPerRun() > 0) {
+        if (($itemsPerRun = $this->itemsPerRun()) > 0) {
             $this->searchCriteriaBuilder->setPageSize($itemsPerRun);
         }
 
@@ -434,7 +434,7 @@ class PriceListCron implements PriceListCronInterface
 
     private function moduleEnabled()
     {
-        $status = $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
+        $status = (bool) $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
 
         if (!$status)
             $this->logger->info(self::DISABLED_MSG);
@@ -444,9 +444,7 @@ class PriceListCron implements PriceListCronInterface
 
     private function createEmptyGroups()
     {
-        $bool = $this->helper->getCronConfig(CronConfig::EMPTY_GROUPS);
-
-        return $bool;
+        return $this->helper->getCronConfig(CronConfig::EMPTY_GROUPS);
     }
 
     private function itemsPerRun()

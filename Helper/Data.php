@@ -89,7 +89,7 @@ class Data extends AbstractHelper implements HelperDataInterface
 
     /**
      * @param string $code
-     * @return int
+     * @return mixed
      */
     public function getCronConfig($code)
     {

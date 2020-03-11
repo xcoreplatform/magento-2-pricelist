@@ -434,7 +434,7 @@ class PriceListCron implements PriceListCronInterface
 
     private function moduleEnabled()
     {
-        $status = (bool) $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
+        $status = $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
 
         if (!$status)
             $this->logger->info(self::DISABLED_MSG);

@@ -147,7 +147,14 @@ class PriceListCron implements PriceListCronInterface
      */
     private function removeTierPricesForGroup($sku, $group, $priceListItems)
     {
-        $tierPrices = $this->tierPriceManagement->getList($sku, $group->id);
+        $tierPrices = [];
+
+        try {
+            $tierPrices = $this->tierPriceManagement->getList($sku, $group->id);
+        } catch (\Exception $exception) {
+            $this->logger->error(sprintf(self::FAILED_REMOVE_MSG, $sku, $group->id));
+            $this->logger->info($exception->getMessage());
+        }
 
         /** @var ProductTierPriceInterface $tierPrice */
         foreach ($tierPrices as $tierPrice) {

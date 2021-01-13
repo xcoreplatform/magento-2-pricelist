@@ -29,7 +29,7 @@ class Setting implements SettingInterface
     }
 
     /**
-     * @return int
+     * @return string
      */
     public function getValue()
     {
@@ -37,7 +37,7 @@ class Setting implements SettingInterface
     }
 
     /**
-     * @var int $value
+     * @var string $value
      * @return $this
      */
     public function setValue($value)

@@ -92,9 +92,9 @@ class Data extends AbstractHelper implements HelperDataInterface
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($lastSuccessJobs->getSize()) {
-            return $lastSuccessJobs->fetchItem()->getExecutedAt();
+            return $lastSuccessJobs->getFirstItem()->getExecutedAt();
         }
-        return "0000-00-00 00:00:00";
+        return false;
     }
 
     private function getNextRunOfCronJob($cronCode)
@@ -105,9 +105,9 @@ class Data extends AbstractHelper implements HelperDataInterface
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($nextJobs->getSize()) {
-            return $nextJobs->fetchItem()->getExecutedAt();
+            return $nextJobs->getFirstItem()->getExecutedAt();
         }
-        return "0000-00-00 00:00:00";
+        return false;
     }
 
     /**

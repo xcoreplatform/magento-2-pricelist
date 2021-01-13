@@ -16,12 +16,12 @@ interface SettingInterface
     public function setField($field);
 
     /**
-     * @return int
+     * @return string
      */
     public function getValue();
 
     /**
-     * @var int $value
+     * @var string $value
      * @return \Dealer4dealer\Pricelist\Api\Data\SettingInterface
      */
     public function setValue($value);

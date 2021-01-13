@@ -10,7 +10,7 @@ class Setting implements SettingInterface
     protected $value;
 
     /**
-     * @return int
+     * @return string
      */
     public function getField()
     {

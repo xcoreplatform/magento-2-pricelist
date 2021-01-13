@@ -4,7 +4,7 @@
     "type": "magento2-module",
     "license": ["MIT"],
     "require": {
-        "dealer4dealer/xcore-magento2": "^2.2.2"
+        "dealer4dealer/xcore-magento2": "^2.5.0"
     },
     "autoload": {
         "files": ["registration.php"],

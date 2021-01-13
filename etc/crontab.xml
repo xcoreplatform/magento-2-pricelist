@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <config>
-	<group id="default">
+	<group id="dealer4dealer_xcore_pricelist">
 		<job name="xcore_generate_tier_prices" instance="Dealer4dealer\Pricelist\Cron\PriceListCron" method="execute">
 			<schedule>0 * * * *</schedule>
 		</job>

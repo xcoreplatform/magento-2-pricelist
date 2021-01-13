@@ -7,6 +7,7 @@ use Dealer4dealer\Pricelist\Helper\Codes\CronConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\CustomerConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
 use Dealer4dealer\Pricelist\Model\Setting;
+use Magento\Cron\Model\ResourceModel\Schedule\Collection;
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\ObjectManagerInterface;
@@ -17,16 +18,20 @@ class Data extends AbstractHelper implements HelperDataInterface
 {
     protected $storeManager;
     protected $objectManager;
+    protected $cronCollection;
     const XML_PATH_GENERAL  = 'pricelist/general/';
     const XML_PATH_CUSTOMER = 'pricelist/customer/';
     const XML_PATH_CRON     = 'pricelist/cron/';
 
-    public function __construct(Context $context,
-                                ObjectManagerInterface $objectManager,
-                                StoreManagerInterface $storeManager)
-    {
-        $this->objectManager = $objectManager;
-        $this->storeManager  = $storeManager;
+    public function __construct(
+        Context $context,
+        ObjectManagerInterface $objectManager,
+        StoreManagerInterface $storeManager,
+        Collection $cronCollection
+    ) {
+        $this->objectManager  = $objectManager;
+        $this->storeManager   = $storeManager;
+        $this->cronCollection = $cronCollection;
         parent::__construct($context);
     }
 
@@ -59,18 +64,57 @@ class Data extends AbstractHelper implements HelperDataInterface
         $cronItemsPerRun->setField(self::XML_PATH_CRON . CronConfig::ITEMS_PER_RUN);
         $cronItemsPerRun->setValue($this->getCronConfig(CronConfig::ITEMS_PER_RUN));
 
+        $cronLastRun = new Setting;
+        $cronLastRun->setField(self::XML_PATH_CRON . CronConfig::LAST_RUN);
+        $cronLastRun->setValue($this->getLastRunOfCronJob('xcore_generate_tier_prices'));
+
+        $cronNextRun = new Setting;
+        $cronNextRun->setField(self::XML_PATH_CRON . CronConfig::NEXT_RUN);
+        $cronNextRun->setValue($this->getNextRunOfCronJob('xcore_generate_tier_prices'));
+
         return [
             $generalEnabled,
             $customerEnabled,
             $customerDefault,
             $customerRunCron,
             $cronEmptyGroups,
-            $cronItemsPerRun
+            $cronItemsPerRun,
+            $cronLastRun,
+            $cronNextRun,
         ];
+    }
+
+    private function getLastRunOfCronJob($cronCode)
+    {
+        $lastSuccessJobs = $this->cronCollection
+            ->create()
+            ->addFieldToFilter('job_code', $cronCode)
+            ->addFieldToFilter('status', 'success')
+            ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
+            ->setPageSize(1);
+        if ($lastSuccessJobs->getSize()) {
+            return $lastSuccessJobs->fetchItem()->getExecutedAt();
+        }
+        return "0000-00-00 00:00:00";
+    }
+
+    private function getNextRunOfCronJob($cronCode)
+    {
+        $nextJobs = $this->cronCollection
+            ->create()
+            ->addFieldToFilter('job_code', $cronCode)
+            ->addFieldToFilter('status', 'pending')
+            ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
+            ->setPageSize(1);
+        if ($nextJobs->getSize()) {
+            return $nextJobs->fetchItem()->getExecutedAt();
+        }
+        return "0000-00-00 00:00:00";
     }
 
     /**
      * @param string $code
+     *
      * @return int
      */
     public function getGeneralConfig($code)
@@ -80,6 +124,7 @@ class Data extends AbstractHelper implements HelperDataInterface
 
     /**
      * @param string $code
+     *
      * @return int
      */
     public function getCustomerConfig($code)
@@ -89,6 +134,7 @@ class Data extends AbstractHelper implements HelperDataInterface
 
     /**
      * @param string $code
+     *
      * @return mixed
      */
     public function getCronConfig($code)

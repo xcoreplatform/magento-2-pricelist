@@ -18,6 +18,8 @@ use Magento\Catalog\Model\Product\TierPriceManagement;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Model\Data\Group;
 use Magento\Customer\Model\ResourceModel\GroupRepository;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\Search\FilterGroupBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\BaseFactory;
 use Magento\Tax\Api\Data\TaxClassInterface;
@@ -33,6 +35,8 @@ class PriceListCron implements PriceListCronInterface
     const FAILED_ADD_MSG    = 'Failed to add tier price with SKU %s for customer group %s';
     private $logger;
     private $helper;
+    private $filterGroupBuilder;
+    private $filterBuilder;
     private $searchCriteriaBuilder;
     private $customerGroupRepository;
     private $customerGroupFactory;
@@ -54,6 +58,8 @@ class PriceListCron implements PriceListCronInterface
      *
      * @param LoggerInterface                   $logger
      * @param Data                              $helper
+     * @param FilterGroupBuilder                $filterGroupBuilder
+     * @param FilterBuilder                     $filterBuilder
      * @param SearchCriteriaBuilder             $searchCriteriaBuilder
      * @param GroupRepository                   $groupRepository
      * @param GroupInterfaceFactory|BaseFactory $groupFactory
@@ -62,18 +68,23 @@ class PriceListCron implements PriceListCronInterface
      * @param PriceListItemRepositoryInterface  $priceListItemRepository
      * @param TierPriceManagement               $tierPriceManagement
      */
-    public function __construct(LoggerInterface $logger,
-                                Data $helper,
-                                SearchCriteriaBuilder $searchCriteriaBuilder,
-                                GroupRepository $groupRepository,
-                                GroupInterfaceFactory $groupFactory,
-                                TaxClassRepository $taxRepository,
-                                PriceListRepositoryInterface $priceListRepository,
-                                PriceListItemRepositoryInterface $priceListItemRepository,
-                                TierPriceManagement $tierPriceManagement)
-    {
+    public function __construct(
+        LoggerInterface $logger,
+        Data $helper,
+        FilterGroupBuilder $filterGroupBuilder,
+        FilterBuilder $filterBuilder,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        GroupRepository $groupRepository,
+        GroupInterfaceFactory $groupFactory,
+        TaxClassRepository $taxRepository,
+        PriceListRepositoryInterface $priceListRepository,
+        PriceListItemRepositoryInterface $priceListItemRepository,
+        TierPriceManagement $tierPriceManagement
+    ) {
         $this->logger                  = $logger;
         $this->helper                  = $helper;
+        $this->filterGroupBuilder      = $filterGroupBuilder;
+        $this->filterBuilder           = $filterBuilder;
         $this->searchCriteriaBuilder   = $searchCriteriaBuilder;
         $this->customerGroupRepository = $groupRepository;
         $this->customerGroupFactory    = $groupFactory;
@@ -90,13 +101,17 @@ class PriceListCron implements PriceListCronInterface
      */
     public function execute()
     {
-        if ($this->moduleEnabled() == false) return self::DISABLED_MSG;
+        if ($this->moduleEnabled() == false) {
+            return self::DISABLED_MSG;
+        }
 
         $this->logger->info(self::EXECUTE_MSG);
 
         $this->setAllLists();
 
-        if ($this->createEmptyGroups()) $this->createGroups();
+        if ($this->createEmptyGroups()) {
+            $this->createGroups();
+        }
 
         $this->setAllGroups();
 
@@ -105,11 +120,13 @@ class PriceListCron implements PriceListCronInterface
         $this->setItemsToAdd();
 
         foreach ($this->itemsToProcess as $sku => $process) {
-            if (isset($process['remove']))
+            if (isset($process['remove'])) {
                 $this->removeTierPrices($sku, $process['remove']);
+            }
 
-            if (isset($process['add']))
+            if (isset($process['add'])) {
                 $this->createTierPrices($sku, $process['add']);
+            }
         }
 
         $result = new CronResult;
@@ -212,12 +229,20 @@ class PriceListCron implements PriceListCronInterface
                 $this->tierPriceManagement->add($sku, $group->id, floatval($priceListItem->getPrice()), floatval($priceListItem->getQty()));
 
                 $this->addedTierPrices++;
+
+                $priceListItem->setProcessed(1);
+
+                // Reset error count as it was added successfully
+                $priceListItem->setErrorCount(0);
             } catch (\Exception $exception) {
                 $this->logger->error(sprintf(self::FAILED_ADD_MSG, $sku, $group->id));
                 $this->logger->info($exception->getMessage());
+
+                // Up error count as it failed for some reason.
+                $errorCount = (int)$priceListItem->getErrorCount() + 1;
+                $priceListItem->setErrorCount($errorCount);
             }
 
-            $priceListItem->setProcessed(1);
             $this->priceListItemRepository->save($priceListItem);
         }
     }
@@ -246,8 +271,24 @@ class PriceListCron implements PriceListCronInterface
      */
     private function setItemsToAdd()
     {
-        $this->searchCriteriaBuilder->setFilterGroups([])
-                                    ->addFilter(PriceListItemInterface::PROCESSED, '0')
+        $processedFilter = $this->filterBuilder
+            ->setField(PriceListItemInterface::PROCESSED)
+            ->setValue('0')
+            ->setConditionType('eq')
+            ->create();
+
+        $errorCountFilter = $this->filterBuilder
+            ->setField(PriceListItemInterface::ERROR_COUNT)
+            ->setValue('3')
+            ->setConditionType('lt')
+            ->create();
+
+        $filterGroup = $this->filterGroupBuilder
+            ->addFilter($processedFilter)
+            ->addFilter($errorCountFilter)
+            ->create();
+
+        $this->searchCriteriaBuilder->setFilterGroups([$filterGroup])
                                     ->addFilter(PriceListItemInterface::PRICE_LIST_ID, $this->activePriceListIds, 'in');
 
         if (($itemsPerRun = $this->itemsPerRun()) > 0) {
@@ -267,8 +308,9 @@ class PriceListCron implements PriceListCronInterface
                 continue;
             }
 
-            if ($item->getStartDate() != null && $item->getStartDate() > date('Y-m-d'))
+            if ($item->getStartDate() != null && $item->getStartDate() > date('Y-m-d')) {
                 continue;
+            }
 
             $this->itemsToProcess[$item->getProductSku()]['add'][$item->getPriceListId()][] = $item;
         }
@@ -336,11 +378,13 @@ class PriceListCron implements PriceListCronInterface
         $this->allTaxClasses = [];
 
         $searchCriteria     = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                          ->addFilter('class_name',
-                                                                      XcoreTaxClass::NO_VAT . ',' .
-                                                                      XcoreTaxClass::EXCL_VAT . ',' .
-                                                                      XcoreTaxClass::INCL_VAT,
-                                                                      'in')
+                                                          ->addFilter(
+                                                              'class_name',
+                                                              XcoreTaxClass::NO_VAT . ',' .
+                                                              XcoreTaxClass::EXCL_VAT . ',' .
+                                                              XcoreTaxClass::INCL_VAT,
+                                                              'in'
+                                                          )
                                                           ->create();
         $taxClassCollection = $this->taxClassRepository->getList($searchCriteria);
 
@@ -354,12 +398,10 @@ class PriceListCron implements PriceListCronInterface
      * - xCore Price List x
      * - xCore Price List x including
      * - xCore Price List x excluding
-     *
      * If no customers are linked to price list x with a specific VAT class,
      * the group itself will not have been created. This method will create
      * those non-existing groups. That way, tier prices will also be created
      * for those groups.
-     *
      * Benefit:          As soon as a customer is linked to the group, tier
      *                   prices are visible for his/her.
      * Disadvantage:     More tier prices will be created, and there's no
@@ -380,8 +422,9 @@ class PriceListCron implements PriceListCronInterface
         foreach ($this->allPriceLists as $priceList) {
             /** @var TaxClassInterface $taxClassGroup */
             foreach ($this->allTaxClasses as $taxClassGroup) {
-                if ($this->getGroups($priceList->getId(), $taxClassGroup->getClassId()))
+                if ($this->getGroups($priceList->getId(), $taxClassGroup->getClassId())) {
                     continue;
+                }
 
                 $this->createGroup($priceList, $taxClassGroup);
 
@@ -389,8 +432,9 @@ class PriceListCron implements PriceListCronInterface
             }
         }
 
-        if ($newGroups)
+        if ($newGroups) {
             $this->logger->info(sprintf('Created %s new customer group(s)', $newGroups));
+        }
     }
 
     /**
@@ -398,6 +442,7 @@ class PriceListCron implements PriceListCronInterface
      *
      * @param null $priceListId
      * @param null $taxClassId
+     *
      * @return CustomerGroup[]
      */
     private function getGroups($priceListId = null, $taxClassId = null)
@@ -405,8 +450,9 @@ class PriceListCron implements PriceListCronInterface
         $groups = [];
 
         foreach ($this->allCustomerGroups as $group) {
-            if (($priceListId == null || $group->priceListId == $priceListId) && ($taxClassId == null || $group->taxClassId == $taxClassId))
+            if (($priceListId == null || $group->priceListId == $priceListId) && ($taxClassId == null || $group->taxClassId == $taxClassId)) {
                 $groups[] = $group;
+            }
         }
 
         return $groups;
@@ -443,8 +489,9 @@ class PriceListCron implements PriceListCronInterface
     {
         $status = $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
 
-        if (!$status)
+        if (!$status) {
             $this->logger->info(self::DISABLED_MSG);
+        }
 
         return $status;
     }

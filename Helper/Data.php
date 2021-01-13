@@ -87,7 +87,6 @@ class Data extends AbstractHelper implements HelperDataInterface
     private function getLastRunOfCronJob($cronCode)
     {
         $lastSuccessJobs = $this->cronCollection
-            ->create()
             ->addFieldToFilter('job_code', $cronCode)
             ->addFieldToFilter('status', 'success')
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
@@ -101,7 +100,6 @@ class Data extends AbstractHelper implements HelperDataInterface
     private function getNextRunOfCronJob($cronCode)
     {
         $nextJobs = $this->cronCollection
-            ->create()
             ->addFieldToFilter('job_code', $cronCode)
             ->addFieldToFilter('status', 'pending')
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)

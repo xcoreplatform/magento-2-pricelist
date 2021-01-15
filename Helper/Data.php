@@ -90,7 +90,7 @@ class Data extends AbstractHelper implements HelperDataInterface
             ->clear()
             ->addFieldToFilter('job_code', ['eq' => $cronCode])
             ->addFieldToFilter('status', ['eq' => 'success'])
-            ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
+            ->setOrder('schedule_id', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($lastSuccessJobs->getSize()) {
             return $lastSuccessJobs->getFirstItem()->getFinishedAt();
@@ -107,7 +107,8 @@ class Data extends AbstractHelper implements HelperDataInterface
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($nextJobs->getSize()) {
-            return $nextJobs->getFirstItem()->getScheduledAt();
+            return $nextJobs->getSelect();
+//            return $nextJobs->getFirstItem()->getScheduledAt();
         }
         return false;
     }

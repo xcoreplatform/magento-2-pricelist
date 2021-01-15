@@ -88,7 +88,7 @@ class Data extends AbstractHelper implements HelperDataInterface
     {
         $lastSuccessJobs = $this->cronCollection
             ->clear()
-            ->addFieldToFilter('job_code', $cronCode)
+            ->addFieldToFilter('job_code', ['eq' => $cronCode])
             ->addFieldToFilter('status', ['eq' => 'success'])
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
@@ -102,7 +102,7 @@ class Data extends AbstractHelper implements HelperDataInterface
     {
         $nextJobs = $this->cronCollection
             ->clear()
-            ->addFieldToFilter('job_code', $cronCode)
+            ->addFieldToFilter('job_code', ['eq' => $cronCode])
             ->addFieldToFilter('status', ['eq' => 'pending'])
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);

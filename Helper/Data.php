@@ -18,7 +18,7 @@ class Data extends AbstractHelper implements HelperDataInterface
 {
     protected $storeManager;
     protected $objectManager;
-    protected $cronCollection;
+    protected $scheduleFactory;
     const XML_PATH_GENERAL  = 'pricelist/general/';
     const XML_PATH_CUSTOMER = 'pricelist/customer/';
     const XML_PATH_CRON     = 'pricelist/cron/';
@@ -27,11 +27,11 @@ class Data extends AbstractHelper implements HelperDataInterface
         Context $context,
         ObjectManagerInterface $objectManager,
         StoreManagerInterface $storeManager,
-        Collection $cronCollection
+        \Magento\Cron\Model\ScheduleFactory $scheduleFactory
     ) {
         $this->objectManager  = $objectManager;
         $this->storeManager   = $storeManager;
-        $this->cronCollection = $cronCollection;
+        $this->scheduleFactory = $scheduleFactory;
         parent::__construct($context);
     }
 
@@ -86,8 +86,9 @@ class Data extends AbstractHelper implements HelperDataInterface
 
     private function getLastRunOfCronJob($cronCode)
     {
-        $lastSuccessJobs = $this->cronCollection
-            ->clear()
+        $lastSuccessJobs = $this->scheduleFactory->create();
+
+        $lastSuccessJobs
             ->addFieldToFilter('job_code', ['eq' => $cronCode])
             ->addFieldToFilter('status', ['eq' => 'success'])
             ->setOrder('schedule_id', Collection::SORT_ORDER_DESC)
@@ -100,15 +101,13 @@ class Data extends AbstractHelper implements HelperDataInterface
 
     private function getNextRunOfCronJob($cronCode)
     {
-        $nextJobs = $this->cronCollection
-            ->clear()
+        $nextJobs = $this->scheduleFactory->create()
             ->addFieldToFilter('job_code', ['eq' => $cronCode])
             ->addFieldToFilter('status', ['eq' => 'pending'])
-            ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
+            ->setOrder('schedule_id', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($nextJobs->getSize()) {
-            return $nextJobs->getSelect();
-//            return $nextJobs->getFirstItem()->getScheduledAt();
+            return $nextJobs->getFirstItem()->getScheduledAt();
         }
         return false;
     }

@@ -89,7 +89,7 @@ class Data extends AbstractHelper implements HelperDataInterface
         $lastSuccessJobs = $this->getCronJobsByCode($cronCode);
         $lastSuccessJobs = array_reverse($lastSuccessJobs);
         foreach($lastSuccessJobs as $lastSuccessJob) {
-            if($lastSuccessJob->status == 'success') {
+            if($lastSuccessJob->getStatus() == 'success') {
                 return $lastSuccessJob->getFinishedAt();
             }
         }
@@ -100,7 +100,7 @@ class Data extends AbstractHelper implements HelperDataInterface
     {
         $nextJobs = $this->getCronJobsByCode($cronCode);
         foreach($nextJobs as $nextJob) {
-            if($nextJob->status == 'pending') {
+            if($nextJob->getStatus() == 'pending') {
                 return $nextJob->getScheduledAt();
             }
         }

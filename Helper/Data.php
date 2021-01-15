@@ -93,7 +93,7 @@ class Data extends AbstractHelper implements HelperDataInterface
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($lastSuccessJobs->getSize()) {
-            return $lastSuccessJobs->getFirstItem()->getExecutedAt();
+            return $lastSuccessJobs->getFirstItem()->getScheduleId();
         }
         return false;
     }
@@ -107,7 +107,7 @@ class Data extends AbstractHelper implements HelperDataInterface
             ->setOrder('scheduled_at', Collection::SORT_ORDER_DESC)
             ->setPageSize(1);
         if ($nextJobs->getSize()) {
-            return $nextJobs->getFirstItem()->getScheduledAt();
+            return $nextJobs->getFirstItem()->getScheduleId();
         }
         return false;
     }

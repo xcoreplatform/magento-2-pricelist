@@ -18,7 +18,7 @@ class Data extends AbstractHelper implements HelperDataInterface
 {
     protected $storeManager;
     protected $objectManager;
-    protected $scheduleFactory;
+    protected $cronCollection;
     const XML_PATH_GENERAL  = 'pricelist/general/';
     const XML_PATH_CUSTOMER = 'pricelist/customer/';
     const XML_PATH_CRON     = 'pricelist/cron/';
@@ -27,11 +27,11 @@ class Data extends AbstractHelper implements HelperDataInterface
         Context $context,
         ObjectManagerInterface $objectManager,
         StoreManagerInterface $storeManager,
-        \Magento\Cron\Model\ScheduleFactory $scheduleFactory
+        Collection $cronCollection
     ) {
         $this->objectManager  = $objectManager;
         $this->storeManager   = $storeManager;
-        $this->scheduleFactory = $scheduleFactory;
+        $this->cronCollection = $cronCollection;
         parent::__construct($context);
     }
 
@@ -86,30 +86,34 @@ class Data extends AbstractHelper implements HelperDataInterface
 
     private function getLastRunOfCronJob($cronCode)
     {
-        $lastSuccessJobs = $this->scheduleFactory->create();
-
-        $lastSuccessJobs
-            ->addFieldToFilter('job_code', ['eq' => $cronCode])
-            ->addFieldToFilter('status', ['eq' => 'success'])
-            ->setOrder('schedule_id', Collection::SORT_ORDER_DESC)
-            ->setPageSize(1);
-        if ($lastSuccessJobs->getSize()) {
-            return $lastSuccessJobs->getFirstItem()->getFinishedAt();
+        $lastSuccessJobs = $this->getCronJobsByCode($cronCode);
+        $lastSuccessJobs = array_reverse($lastSuccessJobs);
+        foreach($lastSuccessJobs as $lastSuccessJob) {
+            if($lastSuccessJob->status == 'success') {
+                return $lastSuccessJob->getFinishedAt();
+            }
         }
         return false;
     }
 
     private function getNextRunOfCronJob($cronCode)
     {
-        $nextJobs = $this->scheduleFactory->create()
-            ->addFieldToFilter('job_code', ['eq' => $cronCode])
-            ->addFieldToFilter('status', ['eq' => 'pending'])
-            ->setOrder('schedule_id', Collection::SORT_ORDER_DESC)
-            ->setPageSize(1);
-        if ($nextJobs->getSize()) {
-            return $nextJobs->getFirstItem()->getScheduledAt();
+        $nextJobs = $this->getCronJobsByCode($cronCode);
+        foreach($nextJobs as $nextJob) {
+            if($nextJob->status == 'pending') {
+                return $nextJob->getScheduledAt();
+            }
         }
         return false;
+    }
+
+    private function getCronJobsByCode($cronCode)
+    {
+        return $this->cronCollection
+            ->clear()
+            ->addFieldToFilter('job_code', ['eq' => $cronCode])
+            ->setOrder('schedule_id', Collection::SORT_ORDER_ASC)
+            ->getItems();
     }
 
     /**

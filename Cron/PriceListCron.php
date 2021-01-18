@@ -273,14 +273,14 @@ class PriceListCron implements PriceListCronInterface
     {
         $processedFilter = $this->filterBuilder
             ->setField(PriceListItemInterface::PROCESSED)
-            ->setValue('0')
+            ->setValue(0)
             ->setConditionType('eq')
             ->create();
 
         $errorCountFilter = $this->filterBuilder
             ->setField(PriceListItemInterface::ERROR_COUNT)
-            ->setValue('3')
-            ->setConditionType('lt')
+            ->setValue(3)
+            ->setConditionType('lteq')
             ->create();
 
         $filterGroup = $this->filterGroupBuilder

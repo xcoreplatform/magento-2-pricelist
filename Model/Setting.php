@@ -10,7 +10,7 @@ class Setting implements SettingInterface
     protected $value;
 
     /**
-     * @return int
+     * @return string
      */
     public function getField()
     {
@@ -29,7 +29,7 @@ class Setting implements SettingInterface
     }
 
     /**
-     * @return int
+     * @return string
      */
     public function getValue()
     {
@@ -37,7 +37,7 @@ class Setting implements SettingInterface
     }
 
     /**
-     * @var int $value
+     * @var string $value
      * @return $this
      */
     public function setValue($value)

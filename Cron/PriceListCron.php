@@ -222,7 +222,6 @@ class PriceListCron implements PriceListCronInterface
                 try {
                     $this->tierPriceManagement->remove($sku, $group->id, floatval($priceListItem->getQty()));
                 } catch (\Exception $exception) {
-                    $this->logger->info($exception->getMessage());
                     // As there's no addOrUpdate, we first try to remove the tier price before adding it.
                 }
 

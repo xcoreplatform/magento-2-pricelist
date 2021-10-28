@@ -390,9 +390,6 @@ class PriceListCron implements PriceListCronInterface
         $searchCriteria     = $this->searchCriteriaBuilder->setFilterGroups([])
                                                           ->addFilter(
                                                               'class_name',
-                                                              XcoreTaxClass::NO_VAT . ',' .
-                                                              XcoreTaxClass::EXCL_VAT . ',' .
-                                                              XcoreTaxClass::INCL_VAT . ',' .
                                                               XcoreTaxClass::WITH_VAT . ',' .
                                                               XcoreTaxClass::WITHOUT_VAT,
                                                               'in'
@@ -437,7 +434,7 @@ class PriceListCron implements PriceListCronInterface
                 if ($groups = $this->getGroups($priceList->getId(), $taxClassGroup->getClassId())) {
                     foreach ($groups as $group) {
                         if (!str_contains($group->code, $priceList->getCode())) {
-                            $this->updateGroup($priceList, $taxClassGroup);
+                            $this->updateGroup($group, $priceList, $taxClassGroup);
                         }
                     }
 
@@ -479,15 +476,16 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Creates a group and adds it to the database.
      *
+     * @param CustomerGroup      $group
      * @param PriceListInterface $priceList
      * @param TaxClassInterface  $taxClassGroup
      */
-    private function updateGroup(PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
+    private function updateGroup(CustomerGroup $group, PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
     {
         $code = $this->getGroupCode($priceList, $taxClassGroup);
 
         /** @var Group $group */
-        $group = $this->customerGroupFactory->create();
+        $group = $this->customerGroupRepository->getById($group->getId());
         $group->setCode($code);
         $group->setTaxClassId($taxClassGroup->getClassId());
 

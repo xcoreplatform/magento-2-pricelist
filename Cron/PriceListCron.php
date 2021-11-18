@@ -227,7 +227,6 @@ class PriceListCron implements PriceListCronInterface
     {
         foreach ($priceListItems as $priceListItem) {
             try {
-
                 /** @var ProductTierPriceInterface $productTierPrice */
                 $productTierPrice = $this->productTierPriceFactory->create();
                 $productTierPrice->setCustomerGroupId($group->id)

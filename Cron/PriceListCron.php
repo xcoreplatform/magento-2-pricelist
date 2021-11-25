@@ -235,7 +235,7 @@ class PriceListCron implements PriceListCronInterface
                                  ->setValue(floatval($priceListItem->getPrice()));
 
                 try {
-//                    $this->tierPriceManagement->remove($sku, $productTierPrice);
+                    $this->tierPriceManagement->remove($sku, $productTierPrice);
                 } catch (\Exception $exception) {
                     // As there's no addOrUpdate, we first try to remove the tier price before adding it.
                 }

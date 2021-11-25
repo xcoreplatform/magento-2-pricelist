@@ -14,7 +14,9 @@ use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
 use Dealer4dealer\Xcore\Api\PriceListRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterface;
-use Magento\Catalog\Model\Product\TierPriceManagement;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Api\ScopedProductTierPriceManagementInterface;
+use Magento\Catalog\Model\Product\ScopedTierPriceManagement;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Model\Data\Group;
 use Magento\Customer\Model\ResourceModel\GroupRepository;
@@ -52,6 +54,10 @@ class PriceListCron implements PriceListCronInterface
     private $itemsToProcess    = [];
     private $removedTierPrices = 0;
     private $addedTierPrices   = 0;
+    /**
+     * @var ProductTierPriceInterface
+     */
+    private $productTierPriceFactory;
 
     /**
      * Constructor.
@@ -66,7 +72,8 @@ class PriceListCron implements PriceListCronInterface
      * @param TaxClassRepository                $taxRepository
      * @param PriceListRepositoryInterface      $priceListRepository
      * @param PriceListItemRepositoryInterface  $priceListItemRepository
-     * @param TierPriceManagement               $tierPriceManagement
+     * @param ScopedTierPriceManagement         $tierPriceManagement
+     * @param ProductTierPriceInterfaceFactory  $productTierPriceFactory
      */
     public function __construct(
         LoggerInterface $logger,
@@ -79,7 +86,8 @@ class PriceListCron implements PriceListCronInterface
         TaxClassRepository $taxRepository,
         PriceListRepositoryInterface $priceListRepository,
         PriceListItemRepositoryInterface $priceListItemRepository,
-        TierPriceManagement $tierPriceManagement
+        ScopedProductTierPriceManagementInterface $tierPriceManagement,
+        ProductTierPriceInterfaceFactory $productTierPriceFactory
     ) {
         $this->logger                  = $logger;
         $this->helper                  = $helper;
@@ -92,6 +100,7 @@ class PriceListCron implements PriceListCronInterface
         $this->priceListRepository     = $priceListRepository;
         $this->priceListItemRepository = $priceListItemRepository;
         $this->tierPriceManagement     = $tierPriceManagement;
+        $this->productTierPriceFactory = $productTierPriceFactory;
     }
 
     /**
@@ -178,7 +187,7 @@ class PriceListCron implements PriceListCronInterface
             foreach ($priceListItems as $priceListItem) {
                 if ($tierPrice->getQty() == $priceListItem->getQty()) {
                     try {
-                        $this->tierPriceManagement->remove($sku, $group->id, floatval($priceListItem->getQty()));
+                        $this->tierPriceManagement->remove($sku, $tierPrice);
 
                         $this->priceListItemRepository->delete($priceListItem);
 
@@ -219,13 +228,19 @@ class PriceListCron implements PriceListCronInterface
     {
         foreach ($priceListItems as $priceListItem) {
             try {
+                /** @var ProductTierPriceInterface $productTierPrice */
+                $productTierPrice = $this->productTierPriceFactory->create();
+                $productTierPrice->setCustomerGroupId($group->id)
+                                 ->setQty(floatval($priceListItem->getQty()))
+                                 ->setValue(floatval($priceListItem->getPrice()));
+
                 try {
-                    $this->tierPriceManagement->remove($sku, $group->id, floatval($priceListItem->getQty()));
+                    $this->tierPriceManagement->remove($sku, $productTierPrice);
                 } catch (\Exception $exception) {
                     // As there's no addOrUpdate, we first try to remove the tier price before adding it.
                 }
 
-                $this->tierPriceManagement->add($sku, $group->id, floatval($priceListItem->getPrice()), floatval($priceListItem->getQty()));
+                $this->tierPriceManagement->add($sku, $productTierPrice);
 
                 $this->addedTierPrices++;
 

@@ -14,6 +14,7 @@ use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
 use Dealer4dealer\Xcore\Api\PriceListRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterface;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ScopedProductTierPriceManagementInterface;
 use Magento\Catalog\Model\Product\ScopedTierPriceManagement;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;

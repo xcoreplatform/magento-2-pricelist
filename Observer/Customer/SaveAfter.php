@@ -147,6 +147,8 @@ class SaveAfter implements ObserverInterface
 
         if ($priceList) {
             $this->groupCode = sprintf('PL %s%s #%s', $priceList->getCode(), $taxAddition, $priceList->getId());
+            throw new \Exception($this->groupCode);
+
         }
     }
 

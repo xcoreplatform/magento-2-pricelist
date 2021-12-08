@@ -351,7 +351,7 @@ class PriceListCron implements PriceListCronInterface
         $this->allCustomerGroups = [];
 
         $searchCriteria  = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                       ->addFilter('customer_group_code', 'xCore Price List %', 'like')
+                                                       ->addFilter('customer_group_code', 'PL %', 'like')
                                                        ->create();
         $groupCollection = $this->customerGroupRepository->getList($searchCriteria);
 
@@ -373,8 +373,8 @@ class PriceListCron implements PriceListCronInterface
 
     private function getPriceListIdByCustomerGroupId($customerGroupCode)
     {
-        if (str_contains($customerGroupCode, 'ID:')) {
-            $customerGroupCode = explode('ID:', $customerGroupCode);
+        if (str_contains($customerGroupCode, ' #')) {
+            $customerGroupCode = explode(' #', $customerGroupCode);
             $customerGroupCode = end($customerGroupCode);
         }
 
@@ -537,7 +537,7 @@ class PriceListCron implements PriceListCronInterface
                 break;
         }
 
-        return sprintf('xCore Price List %s%s (ID:%s)', $priceList->getCode(), $taxAddition, $priceList->getId());
+        return sprintf('PL %s%s #%s', $priceList->getCode(), $taxAddition, $priceList->getId());
     }
 
     private function moduleEnabled()

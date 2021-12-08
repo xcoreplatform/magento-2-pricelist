@@ -131,12 +131,8 @@ class SaveAfter implements ObserverInterface
     {
         $this->setTaxClassId();
 
-        $taxClass = $this->taxClassRepository->get($this->taxClassId);
-
-        $taxClassAddition = '';
-        if ($this->customerVatClass) {
-            $taxClassAddition = ' ' . $taxClass->getClassName();
-        }
+        $taxClass         = $this->taxClassRepository->get($this->taxClassId);
+        $taxClassAddition = ' ' . $taxClass->getClassName();
 
         $priceList       = $this->priceListRepository->getById($this->customerPriceList);
         $this->groupCode = sprintf('PL %s%s #%s', $priceList->getCode(), $taxClassAddition, $priceList->getId());

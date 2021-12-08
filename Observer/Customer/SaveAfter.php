@@ -129,9 +129,13 @@ class SaveAfter implements ObserverInterface
      */
     private function createGroupCode()
     {
+        $this->setTaxClassId();
+
+        $taxClass = $this->taxClassRepository->get($this->taxClassId);
+
         $taxClassAddition = '';
         if ($this->customerVatClass) {
-            $taxClassAddition = ' ' . $this->customerVatClass;
+            $taxClassAddition = ' ' . $taxClass->getClassName();
         }
 
         $priceList       = $this->priceListRepository->getById($this->customerPriceList);
@@ -253,16 +257,12 @@ class SaveAfter implements ObserverInterface
 
     private function getDefaultCustomerGroup()
     {
-        $group = $this->helper->getCustomerConfig(CustomerConfig::C_DEFAULT);
-
-        return $group;
+        return $this->helper->getCustomerConfig(CustomerConfig::C_DEFAULT);
     }
 
     private function runCronOnNewGroup()
     {
-        $bool = $this->helper->getCustomerConfig(CustomerConfig::RUN_CRON);
-
-        return $bool;
+        return $this->helper->getCustomerConfig(CustomerConfig::RUN_CRON);
     }
 
     private function setProcessedToFalseForPriceList()

@@ -378,7 +378,7 @@ class PriceListCron implements PriceListCronInterface
             $customerGroupCode = end($customerGroupCode);
         }
 
-        return filter_var($customerGroupCode, FILTER_SANITIZE_NUMBER_INT);;
+        return filter_var($customerGroupCode, FILTER_SANITIZE_NUMBER_INT);
     }
 
     private function setAllListIdsToCreateTierPricesFor()
@@ -527,18 +527,17 @@ class PriceListCron implements PriceListCronInterface
 
     private function getGroupCode(PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
     {
-        $code = sprintf('xCore Price List %s (ID:%s)', $priceList->getCode(), $priceList->getId());
-
+        $taxAddition = '';
         switch ($taxClassGroup->getClassName()) {
             case XcoreTaxClass::WITH_VAT:
-                $code .= ' with vat';
+                $taxAddition = ' with vat';
                 break;
             case XcoreTaxClass::WITHOUT_VAT:
-                $code .= ' without vat';
+                $taxAddition = ' without vat';
                 break;
         }
 
-        return $code;
+        return sprintf('xCore Price List %s%s (ID:%s)', $priceList->getCode(), $taxAddition, $priceList->getId());
     }
 
     private function moduleEnabled()

@@ -351,15 +351,16 @@ class PriceListCron implements PriceListCronInterface
         $this->allCustomerGroups = [];
 
         $searchCriteria  = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                       ->addFilter('customer_group_code', 'xCore Price List %', 'like')
+                                                       ->addFilter('customer_group_code', 'PL %', 'like')
                                                        ->create();
         $groupCollection = $this->customerGroupRepository->getList($searchCriteria);
 
         foreach ($groupCollection->getItems() as $item) {
-            $priceListId = filter_var($item->getCode(), FILTER_SANITIZE_NUMBER_INT);
+            $priceListId = $this->getPriceListIdByCustomerGroupId($item->getCode());
 
             $group               = new CustomerGroup();
             $group->id           = $item->getId();
+            $group->code         = $item->getCode();
             $group->priceListId  = $priceListId;
             $group->taxClassId   = $item->getTaxClassId();
             $group->taxClassName = $item->getTaxClassName();
@@ -368,6 +369,16 @@ class PriceListCron implements PriceListCronInterface
         }
 
         $this->setAllListIdsToCreateTierPricesFor();
+    }
+
+    private function getPriceListIdByCustomerGroupId($customerGroupCode)
+    {
+        if (str_contains($customerGroupCode, ' #')) {
+            $customerGroupCode = explode(' #', $customerGroupCode);
+            $customerGroupCode = end($customerGroupCode);
+        }
+
+        return filter_var($customerGroupCode, FILTER_SANITIZE_NUMBER_INT);
     }
 
     private function setAllListIdsToCreateTierPricesFor()
@@ -384,7 +395,7 @@ class PriceListCron implements PriceListCronInterface
             }
         }
 
-        rtrim($this->activePriceListIds, ',');
+        $this->activePriceListIds = rtrim($this->activePriceListIds, ',');
     }
 
     private function setAllTaxClasses()
@@ -394,9 +405,8 @@ class PriceListCron implements PriceListCronInterface
         $searchCriteria     = $this->searchCriteriaBuilder->setFilterGroups([])
                                                           ->addFilter(
                                                               'class_name',
-                                                              XcoreTaxClass::NO_VAT . ',' .
-                                                              XcoreTaxClass::EXCL_VAT . ',' .
-                                                              XcoreTaxClass::INCL_VAT,
+                                                              XcoreTaxClass::WITH_VAT . ',' .
+                                                              XcoreTaxClass::WITHOUT_VAT,
                                                               'in'
                                                           )
                                                           ->create();
@@ -436,7 +446,13 @@ class PriceListCron implements PriceListCronInterface
         foreach ($this->allPriceLists as $priceList) {
             /** @var TaxClassInterface $taxClassGroup */
             foreach ($this->allTaxClasses as $taxClassGroup) {
-                if ($this->getGroups($priceList->getId(), $taxClassGroup->getClassId())) {
+                if ($groups = $this->getGroups($priceList->getId(), $taxClassGroup->getClassId())) {
+                    foreach ($groups as $group) {
+                        if (!str_contains($group->code, $priceList->getCode())) {
+                            $this->updateGroup($group, $priceList, $taxClassGroup);
+                        }
+                    }
+
                     continue;
                 }
 
@@ -475,21 +491,31 @@ class PriceListCron implements PriceListCronInterface
     /**
      * Creates a group and adds it to the database.
      *
+     * @param CustomerGroup      $group
+     * @param PriceListInterface $priceList
+     * @param TaxClassInterface  $taxClassGroup
+     */
+    private function updateGroup(CustomerGroup $group, PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
+    {
+        $code = $this->getGroupCode($priceList, $taxClassGroup);
+
+        /** @var Group $group */
+        $group = $this->customerGroupRepository->getById($group->getId());
+        $group->setCode($code);
+        $group->setTaxClassId($taxClassGroup->getClassId());
+
+        $this->customerGroupRepository->save($group);
+    }
+
+    /**
+     * Creates a group and adds it to the database.
+     *
      * @param PriceListInterface $priceList
      * @param TaxClassInterface  $taxClassGroup
      */
     private function createGroup(PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
     {
-        $code = 'xCore Price List ' . $priceList->getId();
-
-        switch ($taxClassGroup->getClassName()) {
-            case XcoreTaxClass::INCL_VAT:
-                $code .= ' including';
-                break;
-            case XcoreTaxClass::EXCL_VAT:
-                $code .= ' excluding';
-                break;
-        }
+        $code = $this->getGroupCode($priceList, $taxClassGroup);
 
         /** @var Group $group */
         $group = $this->customerGroupFactory->create();
@@ -497,6 +523,21 @@ class PriceListCron implements PriceListCronInterface
         $group->setTaxClassId($taxClassGroup->getClassId());
 
         $this->customerGroupRepository->save($group);
+    }
+
+    private function getGroupCode(PriceListInterface $priceList, TaxClassInterface $taxClassGroup)
+    {
+        $taxAddition = '';
+        switch ($taxClassGroup->getClassName()) {
+            case XcoreTaxClass::WITH_VAT:
+                $taxAddition = ' with vat';
+                break;
+            case XcoreTaxClass::WITHOUT_VAT:
+                $taxAddition = ' without vat';
+                break;
+        }
+
+        return sprintf('PL %s%s #%s', $priceList->getCode(), $taxAddition, $priceList->getId());
     }
 
     private function moduleEnabled()

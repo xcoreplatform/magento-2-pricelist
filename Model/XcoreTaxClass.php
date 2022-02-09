@@ -4,7 +4,6 @@ namespace Dealer4dealer\Pricelist\Model;
 
 class XcoreTaxClass
 {
-    const NO_VAT   = 'xCore No VAT';
-    const INCL_VAT = 'xCore Including VAT';
-    const EXCL_VAT = 'xCore Excluding VAT';
+    const WITH_VAT    = 'xCore With VAT';
+    const WITHOUT_VAT = 'xCore Without VAT';
 }

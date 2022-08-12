@@ -500,7 +500,7 @@ class PriceListCron implements PriceListCronInterface
         $code = $this->getGroupCode($priceList, $taxClassGroup);
 
         /** @var Group $group */
-        $group = $this->customerGroupRepository->getById($group->getId());
+        $group = $this->customerGroupRepository->getById($group->id);
         $group->setCode($code);
         $group->setTaxClassId($taxClassGroup->getClassId());
 

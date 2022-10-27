@@ -166,7 +166,7 @@ class PriceListCron implements PriceListCronInterface
                 $itemGroupCode            = $priceListItemGroup->getItemGroupCode();
                 $itemGroupAttributeValues = $this->config->getAttribute('catalog_product', 'xcore_item_group')->getSource()->getAllOptions();
 
-                $option = null;
+                $optionId = null;
                 foreach ($itemGroupAttributeValues as $itemGroupAttributeValueKey => $itemGroupAttributeValue) {
                     if ($itemGroupCode === $itemGroupAttributeValue) {
                         $optionId = $itemGroupAttributeValueKey;

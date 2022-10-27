@@ -168,9 +168,9 @@ class PriceListCron implements PriceListCronInterface
 
                 $optionId = null;
                 foreach ($itemGroupAttributeValues as $itemGroupAttributeValueKey => $itemGroupAttributeValue) {
-                    $this->logger->info($itemGroupAttributeValue);
-                    $this->logger->info($itemGroupAttributeValueKey);
-                    $this->logger->info($itemGroupCode);
+                    $this->logger->info(json_encode($itemGroupAttributeValue));
+                    $this->logger->info(json_encode($itemGroupAttributeValueKey));
+                    $this->logger->info(json_encode($itemGroupCode));
                     if ($itemGroupCode === $itemGroupAttributeValue) {
                         $optionId = $itemGroupAttributeValueKey;
                         break;

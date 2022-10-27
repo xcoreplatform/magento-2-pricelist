@@ -198,7 +198,8 @@ class PriceListCron implements PriceListCronInterface
             /** @var ProductTierPriceInterface $productTierPrice */
             $productTierPrice = $this->productTierPriceFactory->create();
             $productTierPrice->setCustomerGroupId('all')
-                             ->setQty($priceListItemGroup->getQty());
+                             ->setQty($priceListItemGroup->getQty())
+                             ->setValue($priceListItemGroup->getDiscount());
 
             $extensionAttributes = $productTierPrice->getExtensionAttributes();
             $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());

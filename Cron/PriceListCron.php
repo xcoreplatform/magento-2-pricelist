@@ -154,7 +154,7 @@ class PriceListCron implements PriceListCronInterface
                                                           ->addFilter('price_list_id', $priceList->getId())
                                                           ->create();
 
-            $priceListItemGroups = $this->priceListItemGroupRepository->getList($searchCriteria)
+            $priceListItemGroups = $this->priceListItemGroupRepository->getList($searchCriteria)->getItems();
 
             if (!$priceListItemGroups) {
                 $this->logger->info('No Item Groups Found');

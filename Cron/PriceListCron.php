@@ -10,16 +10,20 @@ use Dealer4dealer\Pricelist\Model\CronResult;
 use Dealer4dealer\Pricelist\Model\CustomerGroup;
 use Dealer4dealer\Pricelist\Model\XcoreTaxClass;
 use Dealer4dealer\Xcore\Api\Data\PriceListInterface;
+use Dealer4dealer\Xcore\Api\Data\PriceListItemGroupInterface;
 use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
+use Dealer4dealer\Xcore\Api\PriceListItemGroupRepositoryInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
 use Dealer4dealer\Xcore\Api\PriceListRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\ScopedProductTierPriceManagementInterface;
 use Magento\Catalog\Model\Product\ScopedTierPriceManagement;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Model\Data\Group;
 use Magento\Customer\Model\ResourceModel\GroupRepository;
+use Magento\Eav\Model\Config;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\Search\FilterGroupBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -45,6 +49,7 @@ class PriceListCron implements PriceListCronInterface
     private $taxClassRepository;
     private $priceListRepository;
     private $priceListItemRepository;
+    private $priceListItemGroupRepository;
     private $tierPriceManagement;
     private $allPriceLists;
     private $activePriceListIds;
@@ -58,6 +63,8 @@ class PriceListCron implements PriceListCronInterface
      * @var ProductTierPriceInterface
      */
     private $productTierPriceFactory;
+    private $config;
+    private $productRepository;
 
     /**
      * Constructor.
@@ -74,6 +81,8 @@ class PriceListCron implements PriceListCronInterface
      * @param PriceListItemRepositoryInterface  $priceListItemRepository
      * @param ScopedTierPriceManagement         $tierPriceManagement
      * @param ProductTierPriceInterfaceFactory  $productTierPriceFactory
+     * @param Config                            $config
+     * @param ProductRepositoryInterface        $productRepository
      */
     public function __construct(
         LoggerInterface $logger,
@@ -86,21 +95,27 @@ class PriceListCron implements PriceListCronInterface
         TaxClassRepository $taxRepository,
         PriceListRepositoryInterface $priceListRepository,
         PriceListItemRepositoryInterface $priceListItemRepository,
+        PriceListItemGroupRepositoryInterface $priceListItemGroupRepository,
         ScopedProductTierPriceManagementInterface $tierPriceManagement,
-        ProductTierPriceInterfaceFactory $productTierPriceFactory
+        ProductTierPriceInterfaceFactory $productTierPriceFactory,
+        Config $config,
+        ProductRepositoryInterface $productRepository
     ) {
-        $this->logger                  = $logger;
-        $this->helper                  = $helper;
-        $this->filterGroupBuilder      = $filterGroupBuilder;
-        $this->filterBuilder           = $filterBuilder;
-        $this->searchCriteriaBuilder   = $searchCriteriaBuilder;
-        $this->customerGroupRepository = $groupRepository;
-        $this->customerGroupFactory    = $groupFactory;
-        $this->taxClassRepository      = $taxRepository;
-        $this->priceListRepository     = $priceListRepository;
-        $this->priceListItemRepository = $priceListItemRepository;
-        $this->tierPriceManagement     = $tierPriceManagement;
-        $this->productTierPriceFactory = $productTierPriceFactory;
+        $this->logger                       = $logger;
+        $this->helper                       = $helper;
+        $this->filterGroupBuilder           = $filterGroupBuilder;
+        $this->filterBuilder                = $filterBuilder;
+        $this->searchCriteriaBuilder        = $searchCriteriaBuilder;
+        $this->customerGroupRepository      = $groupRepository;
+        $this->customerGroupFactory         = $groupFactory;
+        $this->taxClassRepository           = $taxRepository;
+        $this->priceListRepository          = $priceListRepository;
+        $this->priceListItemRepository      = $priceListItemRepository;
+        $this->priceListItemGroupRepository = $priceListItemGroupRepository;
+        $this->tierPriceManagement          = $tierPriceManagement;
+        $this->productTierPriceFactory      = $productTierPriceFactory;
+        $this->config                       = $config;
+        $this->productRepository            = $productRepository;
     }
 
     /**
@@ -118,6 +133,96 @@ class PriceListCron implements PriceListCronInterface
 
         $this->setAllLists();
 
+        $this->processCustomerGroupPriceLists();
+
+        $this->processItemGroupPriceLists();
+
+        $result = new CronResult;
+        $result->setRemoved($this->removedTierPrices);
+        $result->setAddedOrUpdated($this->addedTierPrices);
+
+        $this->logger->info(sprintf(self::COMPLETED_MSG, $result->getRemoved(), $result->getAddedOrUpdated()));
+
+        return $result;
+    }
+
+    private function processItemGroupPriceLists()
+    {
+        /** @var PriceListInterface $priceList */
+        foreach ($this->allPriceLists as $priceList) {
+            if (!$priceListItemGroups = $priceList->getItemGroups()) {
+                continue;
+            }
+
+            /** @var PriceListItemGroupInterface $priceListItemGroup */
+            foreach ($priceListItemGroups as $priceListItemGroup) {
+                $itemGroupCode            = $priceListItemGroup->getItemGroupCode();
+                $itemGroupAttributeValues = $this->config->getAttribute('catalog_product', 'xcore_item_group')->getSource()->getAllOptions();
+
+                $option = null;
+                foreach ($itemGroupAttributeValues as $itemGroupAttributeValueKey => $itemGroupAttributeValue) {
+                    if ($itemGroupCode === $itemGroupAttributeValue) {
+                        $optionId = $itemGroupAttributeValueKey;
+                        break;
+                    }
+                }
+
+                if (!$optionId) {
+                    continue;
+                }
+                $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                              ->addFilter('xcore_item_group', $optionId)
+                                                              ->create();
+                $products       = $this->productRepository->getList($searchCriteria);
+
+                foreach ($products->getItems() as $product) {
+                    $this->createTierPricesForItemGroup($product->getSku(), $priceListItemGroup);
+                }
+            }
+        }
+    }
+
+    private function createTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)
+    {
+        try {
+            /** @var ProductTierPriceInterface $productTierPrice */
+            $productTierPrice = $this->productTierPriceFactory->create();
+            $productTierPrice->setCustomerGroupId('all')
+                             ->setQty($priceListItemGroup->getQty());
+
+            $extensionAttributes = $productTierPrice->getExtensionAttributes();
+            $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());
+
+            $productTierPrice->setExtensionAttributes($extensionAttributes);
+
+            try {
+                $this->tierPriceManagement->remove($sku, $productTierPrice);
+            } catch (\Exception $exception) {
+                // As there's no addOrUpdate, we first try to remove the tier price before adding it.
+            }
+
+            $this->tierPriceManagement->add($sku, $productTierPrice);
+
+            $this->addedTierPrices++;
+
+            $priceListItemGroup->setProcessed(1);
+
+            // Reset error count as it was added successfully
+            $priceListItemGroup->setErrorCount(0);
+        } catch (\Exception $exception) {
+            $this->logger->error(sprintf(self::FAILED_ADD_MSG, $sku, 'all'));
+            $this->logger->info($exception->getMessage());
+
+            // Up error count as it failed for some reason.
+            $errorCount = (int)$priceListItemGroup->getErrorCount() + 1;
+            $priceListItemGroup->setErrorCount($errorCount);
+        }
+
+        $this->priceListItemGroupRepository->save($priceListItemGroup);
+    }
+
+    private function processCustomerGroupPriceLists()
+    {
         if ($this->createEmptyGroups()) {
             $this->createGroups();
         }
@@ -137,14 +242,6 @@ class PriceListCron implements PriceListCronInterface
                 $this->createTierPrices($sku, $process['add']);
             }
         }
-
-        $result = new CronResult;
-        $result->setRemoved($this->removedTierPrices);
-        $result->setAddedOrUpdated($this->addedTierPrices);
-
-        $this->logger->info(sprintf(self::COMPLETED_MSG, $result->getRemoved(), $result->getAddedOrUpdated()));
-
-        return $result;
     }
 
     /**

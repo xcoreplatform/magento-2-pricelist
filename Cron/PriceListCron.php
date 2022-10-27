@@ -150,7 +150,9 @@ class PriceListCron implements PriceListCronInterface
     {
         /** @var PriceListInterface $priceList */
         foreach ($this->allPriceLists as $priceList) {
-            if (!$priceListItemGroups = $priceList->getItemGroups()) {
+            $priceListItemGroups = $priceList->getItemGroups();
+            if (!$priceListItemGroups) {
+                $this->logger->info('No Item Groups Found');
                 continue;
             }
 

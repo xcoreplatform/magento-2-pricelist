@@ -179,7 +179,7 @@ class PriceListCron implements PriceListCronInterface
         try {
             /** @var ProductTierPriceInterface $productTierPrice */
             $productTierPrice = $this->productTierPriceFactory->create();
-            $productTierPrice->setCustomerGroupId('all')
+            $productTierPrice->setCustomerGroupId('all groups')
                              ->setQty((float) $priceListItemGroup->getQty())
                              ->setValue((float) $priceListItemGroup->getDiscount()); // This is required
 

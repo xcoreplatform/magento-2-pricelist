@@ -161,31 +161,13 @@ class PriceListCron implements PriceListCronInterface
                 continue;
             }
 
-            /** @var PriceListItemGroupInterface $priceListItemGroup */
             foreach ($priceListItemGroups as $priceListItemGroup) {
-                $itemGroupCode            = $priceListItemGroup->getItemGroupCode();
-                $itemGroupAttributeValues = $this->config->getAttribute('catalog_product', 'xcore_item_group')->getSource()->getAllOptions();
-
-                $optionId = null;
-                foreach ($itemGroupAttributeValues as $itemGroupAttributeValue) {
-                    $this->logger->info(json_encode($itemGroupAttributeValue['value']));
-                    $this->logger->info(json_encode($itemGroupAttributeValue['label']));
-                    $this->logger->info(json_encode($itemGroupCode));
-                    if ($itemGroupCode === $itemGroupAttributeValue['label']) {
-                        $optionId = $itemGroupAttributeValue['value'];
-                        break;
-                    }
-                }
-
-                if (!$optionId) {
-                    continue;
-                }
                 $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                              ->addFilter('xcore_item_group', $optionId)
+                                                              ->addFilter('xcore_item_group', $priceListItemGroup->getItemGroup())
                                                               ->create();
-                $products       = $this->productRepository->getList($searchCriteria);
+                $result         = $this->productRepository->getList($searchCriteria);
 
-                foreach ($products->getItems() as $product) {
+                foreach ($result->getItems() as $product) {
                     $this->createTierPricesForItemGroup($product->getSku(), $priceListItemGroup);
                 }
             }
@@ -198,8 +180,7 @@ class PriceListCron implements PriceListCronInterface
             /** @var ProductTierPriceInterface $productTierPrice */
             $productTierPrice = $this->productTierPriceFactory->create();
             $productTierPrice->setCustomerGroupId('all')
-                             ->setQty($priceListItemGroup->getQty())
-                             ->setValue($priceListItemGroup->getDiscount());
+                             ->setQty($priceListItemGroup->getQty());
 
             $extensionAttributes = $productTierPrice->getExtensionAttributes();
             $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());

@@ -21,6 +21,7 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\ScopedProductTierPriceManagementInterface;
 use Magento\Catalog\Model\Product\ScopedTierPriceManagement;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
+use Magento\Customer\Api\GroupManagementInterface;
 use Magento\Customer\Model\Data\Group;
 use Magento\Customer\Model\ResourceModel\GroupRepository;
 use Magento\Eav\Model\Config;
@@ -83,6 +84,7 @@ class PriceListCron implements PriceListCronInterface
      * @param ProductTierPriceInterfaceFactory  $productTierPriceFactory
      * @param Config                            $config
      * @param ProductRepositoryInterface        $productRepository
+     * @param GroupManagementInterface          $groupManagement
      */
     public function __construct(
         LoggerInterface $logger,
@@ -99,7 +101,8 @@ class PriceListCron implements PriceListCronInterface
         ScopedProductTierPriceManagementInterface $tierPriceManagement,
         ProductTierPriceInterfaceFactory $productTierPriceFactory,
         Config $config,
-        ProductRepositoryInterface $productRepository
+        ProductRepositoryInterface $productRepository,
+        GroupManagementInterface $groupManagement
     ) {
         $this->logger                       = $logger;
         $this->helper                       = $helper;
@@ -116,6 +119,7 @@ class PriceListCron implements PriceListCronInterface
         $this->productTierPriceFactory      = $productTierPriceFactory;
         $this->config                       = $config;
         $this->productRepository            = $productRepository;
+        $this->groupManagement              = $groupManagement;
     }
 
     /**
@@ -179,9 +183,10 @@ class PriceListCron implements PriceListCronInterface
         try {
             /** @var ProductTierPriceInterface $productTierPrice */
             $productTierPrice = $this->productTierPriceFactory->create();
-            $productTierPrice->setCustomerGroupId('all groups')
-                             ->setQty((float) $priceListItemGroup->getQty())
-                             ->setValue((float) $priceListItemGroup->getDiscount()); // This is required
+
+            $productTierPrice->setCustomerGroupId($this->groupManagement->getAllCustomersGroup()->getId())
+                             ->setQty((float)$priceListItemGroup->getQty())
+                             ->setValue((float)$priceListItemGroup->getDiscount()); // This is required
 
             $extensionAttributes = $productTierPrice->getExtensionAttributes();
             $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());

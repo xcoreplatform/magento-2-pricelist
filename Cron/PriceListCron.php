@@ -203,7 +203,7 @@ class PriceListCron implements PriceListCronInterface
             $priceListItemGroup->setErrorCount(0);
         } catch (\Exception $exception) {
             $this->logger->error(sprintf(self::FAILED_ADD_MSG, $sku, 'all'));
-            $this->logger->info($exception->getMessage());
+            $this->logger->info((string) $exception);
 
             // Up error count as it failed for some reason.
             $errorCount = (int)$priceListItemGroup->getErrorCount() + 1;

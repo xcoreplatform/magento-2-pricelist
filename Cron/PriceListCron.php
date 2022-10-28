@@ -179,8 +179,9 @@ class PriceListCron implements PriceListCronInterface
         try {
             /** @var ProductTierPriceInterface $productTierPrice */
             $productTierPrice = $this->productTierPriceFactory->create();
-            $productTierPrice->setCustomerGroupId('all') 
-                             ->setQty($priceListItemGroup->getQty());
+            $productTierPrice->setCustomerGroupId('all')
+                             ->setQty($priceListItemGroup->getQty())
+                             ->setValue($priceListItemGroup->getDiscount()); // This is required
 
             $extensionAttributes = $productTierPrice->getExtensionAttributes();
             $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());
@@ -203,7 +204,7 @@ class PriceListCron implements PriceListCronInterface
             $priceListItemGroup->setErrorCount(0);
         } catch (\Exception $exception) {
             $this->logger->error(sprintf(self::FAILED_ADD_MSG, $sku, 'all'));
-            $this->logger->info((string) $exception);
+            $this->logger->info((string)$exception);
 
             // Up error count as it failed for some reason.
             $errorCount = (int)$priceListItemGroup->getErrorCount() + 1;

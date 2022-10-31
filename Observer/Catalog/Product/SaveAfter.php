@@ -22,6 +22,15 @@ class SaveAfter implements ObserverInterface
     private $searchCriteriaBuilder;
     private $itemGroupAttributeCode;
 
+    /**
+     * Constructor.
+     *
+     * @param Data                                  $helper
+     * @param LoggerInterface                       $logger
+     * @param PriceListCron                         $cron
+     * @param PriceListItemGroupRepositoryInterface $priceListItemGroupRepository
+     * @param SearchCriteriaBuilder                 $searchCriteriaBuilder
+     */
     public function __construct(
         Data $helper,
         LoggerInterface $logger,

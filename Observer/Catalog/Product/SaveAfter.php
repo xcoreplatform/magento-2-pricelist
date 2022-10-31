@@ -64,13 +64,10 @@ class SaveAfter implements ObserverInterface
 
         $this->itemGroupAttributeCode = $this->helper->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
 
-        $this->itemGroup = $product->getCustomAttribute($this->itemGroupAttributeCode);
-        if ($this->itemGroup) {
-            $this->itemGroup = $this->itemGroup->getValue();
-        }
+        $this->itemGroup = $product->getCustomAttribute($this->itemGroupAttributeCode)->getValue();
 
         //Check if the item group has changed on the product
-        if($this->itemGroup === $product->getOrigData()[$this->itemGroupAttributeCode]){
+        if(is_null($this->itemGroup) || ($this->itemGroup === $product->getOrigData()[$this->itemGroupAttributeCode])){
             return;
         }
 

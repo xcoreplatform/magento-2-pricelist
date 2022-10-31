@@ -151,10 +151,7 @@ class PriceListCron implements PriceListCronInterface
                 $this->createTierPricesForItemGroup($this->updateSingleProductSku, $priceListItemGroup);
             }
 
-            $msg =  sprintf(self::COMPLETED_MSG_SINGLE_PRODUCT, $this->updateSingleProductSku);
-
-            $this->logger->info($msg);
-            return $msg;
+            return sprintf(self::COMPLETED_MSG_SINGLE_PRODUCT, $this->updateSingleProductSku);
         }
 
         $this->logger->info(self::EXECUTE_MSG);

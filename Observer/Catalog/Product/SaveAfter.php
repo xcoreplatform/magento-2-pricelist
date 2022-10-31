@@ -39,11 +39,11 @@ class SaveAfter implements ObserverInterface
         PriceListItemGroupRepositoryInterface $priceListItemGroupRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder
     ) {
-        $this->helper = $helper;
-        $this->logger = $logger;
-        $this->cron = $cron;
+        $this->helper                       = $helper;
+        $this->logger                       = $logger;
+        $this->cron                         = $cron;
         $this->priceListItemGroupRepository = $priceListItemGroupRepository;
-        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->searchCriteriaBuilder        = $searchCriteriaBuilder;
     }
 
     /**
@@ -68,10 +68,8 @@ class SaveAfter implements ObserverInterface
         if ($this->itemGroup) {
             $this->itemGroup = $this->itemGroup->getValue();
         }
-        $this->logger->info(json_encode($product->getOrigData()));
-        $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId(
-            $product->getOrigData()->getCustomAttribute($this->itemGroupAttributeCode->getValue())
-        );
+        $this->logger->info(json_encode($product->getOrigData()[$this->itemGroupAttributeCode]));
+        $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($product->getOrigData()[$this->itemGroupAttributeCode]);
         $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup->getValue);
 
         $this->cron->setUpdateSingleProduct($product->getSku(), $newPriceListItemGroups, $oldPriceListItemGroups);

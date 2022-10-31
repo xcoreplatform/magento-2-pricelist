@@ -68,7 +68,7 @@ class SaveAfter implements ObserverInterface
         if ($this->itemGroup) {
             $this->itemGroup = $this->itemGroup->getValue();
         }
-        $this->logger->info(json_encode($product->getOrigData()[$this->itemGroupAttributeCode]));
+
         $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($product->getOrigData()[$this->itemGroupAttributeCode]);
         $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup);
 

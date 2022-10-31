@@ -16,6 +16,7 @@ use Dealer4dealer\Xcore\Api\Data\PriceListItemInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemGroupRepositoryInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemRepositoryInterface;
 use Dealer4dealer\Xcore\Api\PriceListRepositoryInterface;
+use Dealer4dealer\Xcore\Model\PriceListItemGroup;
 use Magento\Catalog\Api\Data\ProductTierPriceInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -36,11 +37,12 @@ use Psr\Log\LoggerInterface;
 
 class PriceListCron implements PriceListCronInterface
 {
-    const DISABLED_MSG      = 'Dealer4Dealer Price List setting -- Module enabled = false: skipping Cron/PriceListCron::execute()';
-    const EXECUTE_MSG       = 'Executing Cron : Creating Tier Prices based on xCore Price Lists';
-    const COMPLETED_MSG     = 'Completed Cron : Removed %s and added/updated %s Tier Price(s)';
-    const FAILED_REMOVE_MSG = 'Failed to remove tier price with SKU %s for customer group %s';
-    const FAILED_ADD_MSG    = 'Failed to add tier price with SKU %s for customer group %s';
+    const DISABLED_MSG                 = 'Dealer4Dealer Price List setting -- Module enabled = false: skipping Cron/PriceListCron::execute()';
+    const EXECUTE_MSG                  = 'Executing Cron : Creating Tier Prices based on xCore Price Lists';
+    const COMPLETED_MSG                = 'Completed Cron : Removed %s and added/updated %s Tier Price(s)';
+    const COMPLETED_MSG_SINGLE_PRODUCT = 'Completed Cron : Updated the Tier Price(s) for product: %s';
+    const FAILED_REMOVE_MSG            = 'Failed to remove tier price with SKU %s for customer group %s';
+    const FAILED_ADD_MSG               = 'Failed to add tier price with SKU %s for customer group %s';
     private $logger;
     private $helper;
     private $filterGroupBuilder;
@@ -65,8 +67,13 @@ class PriceListCron implements PriceListCronInterface
      * @var ProductTierPriceInterface
      */
     private $productTierPriceFactory;
-    private $config;
     private $productRepository;
+    // Variables for updating the tier prices with the aftersave from a product
+    private $updateSingleProductSku = null;
+    /** @var ?PriceListItemGroupInterface[] $priceListItemGroupsToAdd */
+    private $priceListItemGroupsToAdd = null;
+    /** @var ?PriceListItemGroupInterface[] $priceListItemGroupsToRemove */
+    private $priceListItemGroupsToRemove = null;
 
     /**
      * Constructor.
@@ -83,7 +90,6 @@ class PriceListCron implements PriceListCronInterface
      * @param PriceListItemRepositoryInterface  $priceListItemRepository
      * @param ScopedTierPriceManagement         $tierPriceManagement
      * @param ProductTierPriceInterfaceFactory  $productTierPriceFactory
-     * @param Config                            $config
      * @param ProductRepositoryInterface        $productRepository
      * @param GroupManagementInterface          $groupManagement
      */
@@ -118,7 +124,6 @@ class PriceListCron implements PriceListCronInterface
         $this->priceListItemGroupRepository = $priceListItemGroupRepository;
         $this->tierPriceManagement          = $tierPriceManagement;
         $this->productTierPriceFactory      = $productTierPriceFactory;
-        $this->config                       = $config;
         $this->productRepository            = $productRepository;
         $this->groupManagement              = $groupManagement;
     }
@@ -132,6 +137,20 @@ class PriceListCron implements PriceListCronInterface
     {
         if ($this->moduleEnabled() == false) {
             return self::DISABLED_MSG;
+        }
+
+        //Check if the variables are set that are used for updating single product item price tier lists.
+        if (!is_null($this->updateSingleProductSku) && (!is_null($this->priceListItemGroupsToRemove) || !is_null($this->priceListItemGroupsToAdd))) {
+            /** @var PriceListItemGroup $priceListItemGroup */
+            foreach ($this->priceListItemGroupsToRemove as $priceListItemGroup) {
+                $this->removeTierPricesForItemGroup($this->updateSingleProductSku, $priceListItemGroup);
+            }
+
+            /** @var PriceListItemGroup $priceListItemGroup */
+            foreach ($this->priceListItemGroupsToAdd as $priceListItemGroup) {
+                $this->createTierPricesForItemGroup($this->updateSingleProductSku, $priceListItemGroup);
+            }
+            return sprintf(self::COMPLETED_MSG_SINGLE_PRODUCT, $this->updateSingleProductSku);
         }
 
         $this->logger->info(self::EXECUTE_MSG);
@@ -181,21 +200,35 @@ class PriceListCron implements PriceListCronInterface
         }
     }
 
+    private function buildTierPriceForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup):ProductTierPriceInterface
+    {
+        /** @var ProductTierPriceInterface $productTierPrice */
+        $productTierPrice = $this->productTierPriceFactory->create();
+
+        $productTierPrice->setCustomerGroupId($this->groupManagement->getAllCustomersGroup()->getId())
+                         ->setQty((float)$priceListItemGroup->getQty())
+                         ->setValue((float)$priceListItemGroup->getDiscount()); // This is required
+
+        $extensionAttributes = $productTierPrice->getExtensionAttributes();
+        $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());
+
+        $productTierPrice->setExtensionAttributes($extensionAttributes);
+    }
+
+    private function removeTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)
+    {
+        $productTierPrice = $this->buildTierPriceForItemGroup($sku, $priceListItemGroup);
+        try {
+            $this->tierPriceManagement->remove($sku, $productTierPrice);
+        } catch (\Exception $exception) {
+            // As there's no addOrUpdate, we first try to remove the tier price before adding it.
+        }
+    }
+
     private function createTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)
     {
         try {
-            /** @var ProductTierPriceInterface $productTierPrice */
-            $productTierPrice = $this->productTierPriceFactory->create();
-
-            $productTierPrice->setCustomerGroupId($this->groupManagement->getAllCustomersGroup()->getId())
-                             ->setQty((float)$priceListItemGroup->getQty())
-                             ->setValue((float)$priceListItemGroup->getDiscount()); // This is required
-
-            $extensionAttributes = $productTierPrice->getExtensionAttributes();
-            $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());
-
-            $productTierPrice->setExtensionAttributes($extensionAttributes);
-
+            $productTierPrice = $this->buildTierPriceForItemGroup($sku, $priceListItemGroup);
             try {
                 $this->tierPriceManagement->remove($sku, $productTierPrice);
             } catch (\Exception $exception) {
@@ -662,5 +695,12 @@ class PriceListCron implements PriceListCronInterface
     private function itemGroupAttributeCode()
     {
         return $this->helper->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
+    }
+
+    public function setUpdateSingleProduct(string $sku, $priceListItemGroupsToAdd = null, $priceListItemGroupsToRemove = null):void
+    {
+        $this->updateSingleProductSku      = $sku;
+        $this->priceListItemGroupsToAdd    = $priceListItemGroupsToAdd;
+        $this->priceListItemGroupsToRemove = $priceListItemGroupsToRemove;
     }
 }

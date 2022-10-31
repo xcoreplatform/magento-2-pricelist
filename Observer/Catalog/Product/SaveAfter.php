@@ -2,20 +2,38 @@
 
 namespace Dealer4dealer\Pricelist\Observer\Catalog\Product;
 
+use Dealer4dealer\Pricelist\Cron\PriceListCron;
+use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
+use Dealer4dealer\Pricelist\Helper\Data;
+use Dealer4dealer\Xcore\Api\PriceListItemGroupRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 
 class SaveAfter implements ObserverInterface
 {
-
     private $itemGroup;
+    private $helper;
+    private $logger;
+    private $cron;
+    private $priceListItemGroupRepository;
+    private $searchCriteriaBuilder;
+    private $itemGroupAttributeCode;
 
     public function __construct(
-
+        Data $helper,
+        LoggerInterface $logger,
+        PriceListCron $cron,
+        PriceListItemGroupRepositoryInterface $priceListItemGroupRepository,
+        SearchCriteriaBuilder $searchCriteriaBuilder
     ) {
-
+        $this->helper = $helper;
+        $this->logger = $logger;
+        $this->cron = $cron;
+        $this->priceListItemGroupRepository = $priceListItemGroupRepository;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
     }
 
     /**
@@ -34,11 +52,38 @@ class SaveAfter implements ObserverInterface
         /** @var Product $product */
         $product = $observer->getEvent()->getProduct();
 
-        $itemGroupAttributeCode = $this->helper->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
+        $this->itemGroupAttributeCode = $this->helper->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
 
-        $this->itemGroup = $product->getCustomAttribute($itemGroupAttributeCode);
+        $this->itemGroup = $product->getCustomAttribute($this->itemGroupAttributeCode);
         if ($this->itemGroup) {
             $this->itemGroup = $this->itemGroup->getValue();
         }
+
+        $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId(
+            $product->getOrigData()->getCustomAttribute($this->itemGroupAttributeCode->getValue())
+        );
+        $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup->getValue);
+
+        $this->cron->setUpdateSingleProduct($product->getSku(), $newPriceListItemGroups, $oldPriceListItemGroups);
+        $this->cron->execute();
+    }
+
+    private function moduleEnabled()
+    {
+        $status = $this->helper->getGeneralConfig(GeneralConfig::ENABLED);
+        if (!$status) {
+            $this->logger->info('Dealer4Dealer Price List setting -- Module enabled = false: skipping Observer/Customer/SaveAfter::execute()');
+        }
+
+        return $status;
+    }
+
+    private function findPriceListItemGroupByItemGroupId($itemGroupId)
+    {
+        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                      ->addFilter($this->itemGroupAttributeCode, $itemGroupId)
+                                                      ->create();
+
+        return $this->priceListItemGroupRepository->getList($searchCriteria)->getItems() ?? [];
     }
 }

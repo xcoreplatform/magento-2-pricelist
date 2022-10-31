@@ -2,6 +2,7 @@
 
 namespace Dealer4dealer\Pricelist\Observer\Catalog\Product;
 
+use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
@@ -33,7 +34,9 @@ class SaveAfter implements ObserverInterface
         /** @var Product $product */
         $product = $observer->getEvent()->getProduct();
 
-        $this->itemGroup = $product->getCustomAttribute('xcore_item_group');
+        $itemGroupAttributeCode = $this->helper->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
+
+        $this->itemGroup = $product->getCustomAttribute($itemGroupAttributeCode);
         if ($this->itemGroup) {
             $this->itemGroup = $this->itemGroup->getValue();
         }

@@ -70,6 +70,15 @@
                     </comment>
                 </field>
             </group>
+            <group id="item" translate="label" type="text" sortOrder="4" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Item</label>
+                <field id="itemgroup_attribute_code" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Itemgroup Attribute Code</label>
+                    <comment>
+                        By default the value of this setting is 'xcore_item_group', this setting corresponds with the setting set in the xCore.
+                    </comment>
+                </field>
+            </group>
         </section>
     </system>
 </config>

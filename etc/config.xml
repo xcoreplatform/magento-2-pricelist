@@ -14,6 +14,9 @@
                 <empty_groups>0</empty_groups>
                 <items_per_run>5000</items_per_run>
             </cron>
+            <item>
+                <itemgroup_attribute_code>xcore_item_group</itemgroup_attribute_code>
+            </item>
         </pricelist>
     </default>
 </config>

@@ -6,6 +6,7 @@ use Dealer4dealer\Pricelist\Api\HelperDataInterface;
 use Dealer4dealer\Pricelist\Helper\Codes\CronConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\CustomerConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
+use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
 use Dealer4dealer\Pricelist\Model\Setting;
 use Magento\Cron\Model\ResourceModel\Schedule\Collection;
 use Magento\Framework\App\Helper\AbstractHelper;
@@ -22,6 +23,7 @@ class Data extends AbstractHelper implements HelperDataInterface
     const XML_PATH_GENERAL  = 'pricelist/general/';
     const XML_PATH_CUSTOMER = 'pricelist/customer/';
     const XML_PATH_CRON     = 'pricelist/cron/';
+    const XML_PATH_ITEM     = 'pricelist/item/';
 
     public function __construct(
         Context $context,
@@ -72,6 +74,10 @@ class Data extends AbstractHelper implements HelperDataInterface
         $cronNextRun->setField(self::XML_PATH_CRON . CronConfig::NEXT_RUN);
         $cronNextRun->setValue($this->getNextRunOfCronJob('xcore_generate_tier_prices'));
 
+        $itemGroupAttribute = new Setting;
+        $itemGroupAttribute->setField(self::XML_PATH_ITEM . ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
+        $itemGroupAttribute->setValue($this->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE));
+
         return [
             $generalEnabled,
             $customerEnabled,
@@ -81,6 +87,7 @@ class Data extends AbstractHelper implements HelperDataInterface
             $cronItemsPerRun,
             $cronLastRun,
             $cronNextRun,
+            $itemGroupAttribute,
         ];
     }
 
@@ -134,6 +141,16 @@ class Data extends AbstractHelper implements HelperDataInterface
     public function getCustomerConfig($code)
     {
         return $this->getConfigValue(self::XML_PATH_CUSTOMER . $code);
+    }
+
+    /**
+     * @param string $code
+     *
+     * @return mixed
+     */
+    public function getItemConfig($code)
+    {
+        return $this->getConfigValue(self::XML_PATH_ITEM . $code);
     }
 
     /**

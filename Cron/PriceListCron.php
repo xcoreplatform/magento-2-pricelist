@@ -5,6 +5,7 @@ namespace Dealer4dealer\Pricelist\Cron;
 use Dealer4dealer\Pricelist\Api\PriceListCronInterface;
 use Dealer4dealer\Pricelist\Helper\Codes\CronConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
+use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
 use Dealer4dealer\Pricelist\Model\CronResult;
 use Dealer4dealer\Pricelist\Model\CustomerGroup;
@@ -152,6 +153,8 @@ class PriceListCron implements PriceListCronInterface
 
     private function processItemGroupPriceLists()
     {
+        $itemGroupAttributeCode = $this->itemGroupAttributeCode();
+
         /** @var PriceListInterface $priceList */
         foreach ($this->allPriceLists as $priceList) {
             $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
@@ -167,7 +170,7 @@ class PriceListCron implements PriceListCronInterface
 
             foreach ($priceListItemGroups as $priceListItemGroup) {
                 $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                              ->addFilter('xcore_item_group', $priceListItemGroup->getItemGroup())
+                                                              ->addFilter($itemGroupAttributeCode, $priceListItemGroup->getItemGroup())
                                                               ->create();
                 $result         = $this->productRepository->getList($searchCriteria);
 
@@ -654,5 +657,10 @@ class PriceListCron implements PriceListCronInterface
     private function itemsPerRun()
     {
         return $this->helper->getCronConfig(CronConfig::ITEMS_PER_RUN);
+    }
+
+    private function itemGroupAttributeCode()
+    {
+        return $this->helper->getItemConfig(ItemConfig::ITEMGROUP_ATTRIBUTE_CODE);
     }
 }

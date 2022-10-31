@@ -213,6 +213,8 @@ class PriceListCron implements PriceListCronInterface
         $extensionAttributes->setPercentageValue($priceListItemGroup->getDiscount());
 
         $productTierPrice->setExtensionAttributes($extensionAttributes);
+
+        return $productTierPrice;
     }
 
     private function removeTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)

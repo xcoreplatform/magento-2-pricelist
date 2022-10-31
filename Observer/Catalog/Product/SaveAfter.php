@@ -70,7 +70,7 @@ class SaveAfter implements ObserverInterface
         }
         $this->logger->info(json_encode($product->getOrigData()[$this->itemGroupAttributeCode]));
         $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($product->getOrigData()[$this->itemGroupAttributeCode]);
-        $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup->getValue);
+        $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup);
 
         $this->cron->setUpdateSingleProduct($product->getSku(), $newPriceListItemGroups, $oldPriceListItemGroups);
         $this->cron->execute();

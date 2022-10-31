@@ -89,7 +89,7 @@ class SaveAfter implements ObserverInterface
     private function findPriceListItemGroupByItemGroupId($itemGroupId)
     {
         $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                      ->addFilter($this->itemGroupAttributeCode, $itemGroupId)
+                                                      ->addFilter('item_group', $itemGroupId)
                                                       ->create();
 
         return $this->priceListItemGroupRepository->getList($searchCriteria)->getItems() ?? [];

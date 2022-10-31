@@ -69,6 +69,11 @@ class SaveAfter implements ObserverInterface
             $this->itemGroup = $this->itemGroup->getValue();
         }
 
+        //Check if the item group has changed on the product
+        if($this->itemGroup === $product->getOrigData()[$this->itemGroupAttributeCode]){
+            return;
+        }
+
         $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($product->getOrigData()[$this->itemGroupAttributeCode]);
         $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup);
 

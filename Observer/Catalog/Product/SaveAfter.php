@@ -11,6 +11,7 @@ use Magento\Catalog\Model\Product;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Psr\Log\LoggerInterface;
 
 class SaveAfter implements ObserverInterface
 {

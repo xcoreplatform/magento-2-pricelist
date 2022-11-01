@@ -148,7 +148,8 @@ class PriceListCron implements PriceListCronInterface
 
             /** @var PriceListItemGroup $priceListItemGroup */
             foreach ($this->priceListItemGroupsToAdd as $priceListItemGroup) {
-                if(is_null($priceListItemGroup->getEndDate()) || $priceListItemGroup->getEndDate() < date('Y-m-d')) {
+                $this->logger->info($priceListItemGroup->getEndDate());
+                if(!$priceListItemGroup->getEndDate() || $priceListItemGroup->getEndDate() < date('Y-m-d')) {
                     continue;
                 }
                 $this->createTierPricesForItemGroup($this->updateSingleProductSku, $priceListItemGroup);

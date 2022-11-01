@@ -8,7 +8,10 @@ use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
 use Dealer4dealer\Xcore\Api\Data\PriceListItemGroupInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemGroupRepositoryInterface;
+use Dealer4dealer\Xcore\Model\PriceListItem;
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\Search\FilterGroupBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
@@ -23,6 +26,8 @@ class SaveAfter implements ObserverInterface
     private $priceListItemGroupRepository;
     private $searchCriteriaBuilder;
     private $itemGroupAttributeCode;
+    private $filterBuilder;
+    private $filterGroupBuilder;
 
     /**
      * Constructor.
@@ -32,19 +37,25 @@ class SaveAfter implements ObserverInterface
      * @param PriceListCron                         $cron
      * @param PriceListItemGroupRepositoryInterface $priceListItemGroupRepository
      * @param SearchCriteriaBuilder                 $searchCriteriaBuilder
+     * @param FilterBuilder                         $filterBuilder
+     * @param FilterGroupBuilder                    $filterGroupBuilder
      */
     public function __construct(
         Data $helper,
         LoggerInterface $logger,
         PriceListCron $cron,
         PriceListItemGroupRepositoryInterface $priceListItemGroupRepository,
-        SearchCriteriaBuilder $searchCriteriaBuilder
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        FilterBuilder $filterBuilder,
+        FilterGroupBuilder $filterGroupBuilder
     ) {
         $this->helper                       = $helper;
         $this->logger                       = $logger;
         $this->cron                         = $cron;
         $this->priceListItemGroupRepository = $priceListItemGroupRepository;
         $this->searchCriteriaBuilder        = $searchCriteriaBuilder;
+        $this->filterBuilder                = $filterBuilder;
+        $this->filterGroupBuilder           = $filterGroupBuilder;
     }
 
     /**
@@ -91,16 +102,43 @@ class SaveAfter implements ObserverInterface
 
     private function findPriceListItemGroupByItemGroupId($itemGroupId)
     {
-        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                      ->addFilter(PriceListItemGroupInterface::ITEM_GROUP, $itemGroupId)
-                                                      ->addFilter(
-                                                          PriceListItemGroupInterface::END_DATE,
-                                                          [
-                                                              'gt' => date('Y-m-d'),
-                                                              'null' => true,
-                                                          ], 'or'
-                                                      )
-                                                      ->create();
+        $filter1        = $this->filterBuilder
+            ->setField(PriceListItemGroupInterface::ITEM_GROUP)
+            ->setValue($itemGroupId)
+            ->setConditionType("eq");
+        $filter2        = $this->filterBuilder
+            ->setField(PriceListItemGroupInterface::END_DATE)
+            ->setValue(date('Y-m-d'))
+            ->setConditionType("gt");
+        $filter3        = $this->filterBuilder
+            ->setField(PriceListItemGroupInterface::END_DATE)
+            ->setValue(null)
+            ->setConditionType(null);
+
+
+        $filterGroup1   = $this->filterGroupBuilder
+            ->addFilter($filter1)
+            ->create();
+
+        $filterGroup2   = $this->filterGroupBuilder
+            ->addFilter($filter2)
+            ->addFilter($filter3)
+            ->create();
+
+        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([$filterGroup1, $filterGroup2])->create();
+
+//
+//        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+//                                                      ->addFilter(PriceListItemGroupInterface::ITEM_GROUP, $itemGroupId)
+//                                                      ->addFilter(
+//                                                          PriceListItemGroupInterface::END_DATE,
+//                                                          [
+//                                                              'gt' => date('Y-m-d'),
+//                                                              null => true,
+//                                                          ],
+//                                                          'or'
+//                                                      )
+//                                                      ->create();
 
         return $this->priceListItemGroupRepository->getList($searchCriteria)->getItems() ?? [];
     }

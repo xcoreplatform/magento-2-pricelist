@@ -175,10 +175,24 @@ class PriceListCron implements PriceListCronInterface
     {
         $itemGroupAttributeCode = $this->itemGroupAttributeCode();
 
+        $this->setItemGroupsToRemove();
+
+        foreach($this->priceListItemGroupsToRemove as $priceListItemGroupToRemove) {
+            $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                          ->addFilter($itemGroupAttributeCode, $priceListItemGroupToRemove->getItemGroup())
+                                                          ->create();
+            $result         = $this->productRepository->getList($searchCriteria);
+
+            foreach ($result->getItems() as $product) {
+                $this->removeTierPricesForItemGroup($product->getSku(), $priceListItemGroupToRemove);
+            }
+        }
+
         /** @var PriceListInterface $priceList */
         foreach ($this->allPriceLists as $priceList) {
             $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                          ->addFilter('price_list_id', $priceList->getId())
+                                                          ->addFilter(PriceListItemGroupInterface::PRICE_LIST_ID, $priceList->getId())
+                                                          ->addFilter(PriceListItemGroupInterface::PROCESSED, '0')
                                                           ->create();
 
             $priceListItemGroups = $this->priceListItemGroupRepository->getList($searchCriteria)->getItems();
@@ -403,13 +417,31 @@ class PriceListCron implements PriceListCronInterface
     private function setItemsToRemove()
     {
         $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                      ->addFilter('end_date', date('Y-m-d'), 'lt')
+                                                      ->addFilter(PriceListItemInterface::END_DATE, date('Y-m-d'), 'lt')
                                                       ->addFilter(PriceListItemInterface::PROCESSED, '1')
                                                       ->create();
         $itemCollection = $this->priceListItemRepository->getList($searchCriteria);
 
         foreach ($itemCollection->getItems() as $item) {
             $this->itemsToProcess[$item->getProductSku()]['remove'][$item->getPriceListId()][] = $item;
+        }
+    }
+
+    /**
+     * Set items that should be removed as tier prices. Rows comply to:
+     * - having an end date that's passed
+     * - being processed before
+     */
+    private function setItemGroupsToRemove()
+    {
+        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                      ->addFilter(PriceListItemGroupInterface::END_DATE, date('Y-m-d'), 'lt')
+                                                      ->addFilter(PriceListItemGroupInterface::PROCESSED, '1')
+                                                      ->create();
+        $itemCollection = $this->priceListItemGroupRepository->getList($searchCriteria);
+
+        foreach ($itemCollection->getItems() as $item) {
+            $this->priceListItemGroupsToRemove[] = $item;
         }
     }
 

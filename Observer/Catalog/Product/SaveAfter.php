@@ -84,6 +84,7 @@ class SaveAfter implements ObserverInterface
 
         $oldPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($product->getOrigData()[$this->itemGroupAttributeCode]);
         $newPriceListItemGroups = $this->findPriceListItemGroupByItemGroupId($this->itemGroup);
+        
 
         $this->cron->setUpdateSingleProduct($product->getSku(), $newPriceListItemGroups, $oldPriceListItemGroups);
         $this->cron->execute();
@@ -101,34 +102,6 @@ class SaveAfter implements ObserverInterface
 
     private function findPriceListItemGroupByItemGroupId($itemGroupId)
     {
-        $filter1 = $this->filterBuilder
-            ->setField(PriceListItemGroupInterface::ITEM_GROUP)
-            ->setValue($itemGroupId)
-            ->setConditionType("eq")
-            ->create();
-
-        $filter2 = $this->filterBuilder
-            ->setField(PriceListItemGroupInterface::END_DATE)
-            ->setValue(date('Y-m-d'))
-            ->setConditionType("gt")
-            ->create();
-
-        $filter3 = $this->filterBuilder
-            ->setField(PriceListItemGroupInterface::END_DATE)
-            ->setValue(true)
-            ->setConditionType('null')
-            ->create();
-
-        $filterGroup1 = $this->filterGroupBuilder
-            ->addFilter($filter1)
-            ->create();
-
-        $filterGroup2 = $this->filterGroupBuilder
-            ->addFilter($filter2)
-            ->addFilter($filter3)
-            ->create();
-
-        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([$filterGroup1, $filterGroup2])->create();
 
 //
 //        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
@@ -142,6 +115,11 @@ class SaveAfter implements ObserverInterface
 //                                                          'or'
 //                                                      )
 //                                                      ->create();
+
+
+        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                      ->addFilter(PriceListItemGroupInterface::ITEM_GROUP, $itemGroupId)
+                                                      ->create();
 
         return $this->priceListItemGroupRepository->getList($searchCriteria)->getItems() ?? [];
     }

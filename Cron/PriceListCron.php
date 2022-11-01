@@ -143,7 +143,7 @@ class PriceListCron implements PriceListCronInterface
         if (!is_null($this->updateSingleProductSku) && (!is_null($this->priceListItemGroupsToRemove) || !is_null($this->priceListItemGroupsToAdd))) {
             /** @var PriceListItemGroup $priceListItemGroup */
             foreach ($this->priceListItemGroupsToRemove as $priceListItemGroup) {
-                $this->removeTierPricesForItemGroup($this->updateSingleProductSku, $priceListItemGroup);
+                $this->removeTierPricesForItemGroup($this->updateSingleProductSku);
             }
 
             /** @var PriceListItemGroup $priceListItemGroup */
@@ -184,7 +184,7 @@ class PriceListCron implements PriceListCronInterface
             $result         = $this->productRepository->getList($searchCriteria);
 
             foreach ($result->getItems() as $product) {
-                $this->removeTierPricesForItemGroup($product->getSku(), $priceListItemGroupToRemove);
+                $this->removeTierPricesForItemGroup($product->getSku());
                 $this->removedTierPrices++;
             }
         }
@@ -233,9 +233,12 @@ class PriceListCron implements PriceListCronInterface
         return $productTierPrice;
     }
 
-    private function removeTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)
+    private function removeTierPricesForItemGroup(string $sku)
     {
-        $productTierPrice = $this->buildTierPriceForItemGroup($sku, $priceListItemGroup);
+        /** @var ProductTierPriceInterface $productTierPrice */
+        $productTierPrice = $this->productTierPriceFactory->create();
+        $productTierPrice->setCustomerGroupId($this->groupManagement->getAllCustomersGroup()->getId());
+
         try {
             $this->tierPriceManagement->remove($sku, $productTierPrice);
         } catch (\Exception $exception) {

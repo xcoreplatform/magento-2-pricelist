@@ -73,7 +73,7 @@ class PriceListCron implements PriceListCronInterface
     /** @var ?PriceListItemGroupInterface[] $priceListItemGroupsToAdd */
     private $priceListItemGroupsToAdd = null;
     /** @var ?PriceListItemGroupInterface[] $priceListItemGroupsToRemove */
-    private $priceListItemGroupsToRemove = null;
+    private $priceListItemGroupsToRemove = [];
 
     /**
      * Constructor.

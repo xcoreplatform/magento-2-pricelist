@@ -3,4 +3,7 @@
 	<event name="customer_save_after_data_object">
 		<observer instance="Dealer4dealer\Pricelist\Observer\Customer\SaveAfter" name="dealer4dealer_pricelist_customer_save_after"/>
 	</event>
+	<event name="catalog_product_save_commit_after">
+		<observer instance="Dealer4dealer\Pricelist\Observer\Catalog\Product\SaveAfter" name="dealer4dealer_pricelist_catalog_product_save_after"/>
+	</event>
 </config>

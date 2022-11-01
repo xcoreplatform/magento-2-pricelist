@@ -96,8 +96,8 @@ class SaveAfter implements ObserverInterface
                                                       ->addFilter(
                                                           PriceListItemGroupInterface::END_DATE,
                                                           [
-                                                              ['gt' => date('Y-m-d')],
-                                                              ['null'],
+                                                              'gt' => date('Y-m-d'),
+                                                              'null' => true,
                                                           ], 'or'
                                                       )
                                                       ->create();

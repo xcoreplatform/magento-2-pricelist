@@ -116,7 +116,7 @@ class SaveAfter implements ObserverInterface
         $filter3 = $this->filterBuilder
             ->setField(PriceListItemGroupInterface::END_DATE)
             ->setValue(true)
-            ->setConditionType(null)
+            ->setConditionType('null')
             ->create();
 
         $filterGroup1 = $this->filterGroupBuilder

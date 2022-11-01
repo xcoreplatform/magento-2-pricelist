@@ -177,7 +177,7 @@ class PriceListCron implements PriceListCronInterface
 
         $this->setItemGroupsToRemove();
 
-        foreach($this->priceListItemGroupsToRemove as $priceListItemGroupToRemove) {
+        foreach ($this->priceListItemGroupsToRemove as $priceListItemGroupToRemove) {
             $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
                                                           ->addFilter($itemGroupAttributeCode, $priceListItemGroupToRemove->getItemGroup())
                                                           ->create();
@@ -185,6 +185,7 @@ class PriceListCron implements PriceListCronInterface
 
             foreach ($result->getItems() as $product) {
                 $this->removeTierPricesForItemGroup($product->getSku(), $priceListItemGroupToRemove);
+                $this->removedTierPrices++;
             }
         }
 
@@ -256,7 +257,9 @@ class PriceListCron implements PriceListCronInterface
 
             $this->addedTierPrices++;
 
-            $priceListItemGroup->setProcessed(1);
+            if(is_null($this->updateSingleProductSku)) {
+                $priceListItemGroup->setProcessed(1);
+            }
 
             // Reset error count as it was added successfully
             $priceListItemGroup->setErrorCount(0);

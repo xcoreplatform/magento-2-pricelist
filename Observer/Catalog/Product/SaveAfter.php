@@ -8,7 +8,6 @@ use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
 use Dealer4dealer\Xcore\Api\Data\PriceListItemGroupInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemGroupRepositoryInterface;
-use Dealer4dealer\Xcore\Model\PriceListItem;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\Search\FilterGroupBuilder;
@@ -102,25 +101,29 @@ class SaveAfter implements ObserverInterface
 
     private function findPriceListItemGroupByItemGroupId($itemGroupId)
     {
-        $filter1        = $this->filterBuilder
+        $filter1 = $this->filterBuilder
             ->setField(PriceListItemGroupInterface::ITEM_GROUP)
             ->setValue($itemGroupId)
-            ->setConditionType("eq");
-        $filter2        = $this->filterBuilder
+            ->setConditionType("eq")
+            ->create();
+
+        $filter2 = $this->filterBuilder
             ->setField(PriceListItemGroupInterface::END_DATE)
             ->setValue(date('Y-m-d'))
-            ->setConditionType("gt");
-        $filter3        = $this->filterBuilder
+            ->setConditionType("gt")
+            ->create();
+
+        $filter3 = $this->filterBuilder
             ->setField(PriceListItemGroupInterface::END_DATE)
             ->setValue(null)
-            ->setConditionType(null);
+            ->setConditionType(null)
+            ->create();
 
-
-        $filterGroup1   = $this->filterGroupBuilder
+        $filterGroup1 = $this->filterGroupBuilder
             ->addFilter($filter1)
             ->create();
 
-        $filterGroup2   = $this->filterGroupBuilder
+        $filterGroup2 = $this->filterGroupBuilder
             ->addFilter($filter2)
             ->addFilter($filter3)
             ->create();

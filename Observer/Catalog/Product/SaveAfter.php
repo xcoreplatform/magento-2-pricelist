@@ -6,6 +6,7 @@ use Dealer4dealer\Pricelist\Cron\PriceListCron;
 use Dealer4dealer\Pricelist\Helper\Codes\GeneralConfig;
 use Dealer4dealer\Pricelist\Helper\Codes\ItemConfig;
 use Dealer4dealer\Pricelist\Helper\Data;
+use Dealer4dealer\Xcore\Api\Data\PriceListItemGroupInterface;
 use Dealer4dealer\Xcore\Api\PriceListItemGroupRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -67,7 +68,7 @@ class SaveAfter implements ObserverInterface
         $this->itemGroup = $product->getCustomAttribute($this->itemGroupAttributeCode)->getValue();
 
         //Check if the item group has changed on the product
-        if(is_null($this->itemGroup) || ($this->itemGroup === $product->getOrigData()[$this->itemGroupAttributeCode])){
+        if (is_null($this->itemGroup) || ($this->itemGroup === $product->getOrigData()[$this->itemGroupAttributeCode])) {
             return;
         }
 
@@ -91,7 +92,14 @@ class SaveAfter implements ObserverInterface
     private function findPriceListItemGroupByItemGroupId($itemGroupId)
     {
         $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                      ->addFilter('item_group', $itemGroupId)
+                                                      ->addFilter(PriceListItemGroupInterface::ITEM_GROUP, $itemGroupId)
+                                                      ->addFilter(
+                                                          PriceListItemGroupInterface::END_DATE,
+                                                          [
+                                                              ['gt' => date('Y-m-d')],
+                                                              ['null'],
+                                                          ], 'or'
+                                                      )
                                                       ->create();
 
         return $this->priceListItemGroupRepository->getList($searchCriteria)->getItems() ?? [];

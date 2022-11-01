@@ -239,11 +239,11 @@ class PriceListCron implements PriceListCronInterface
         $productTierPrice = $this->productTierPriceFactory->create();
         $productTierPrice->setCustomerGroupId($this->groupManagement->getAllCustomersGroup()->getId());
 
-        try {
+//        try {
             $this->tierPriceManagement->remove($sku, $productTierPrice);
-        } catch (\Exception $exception) {
+//        } catch (\Exception $exception) {
             // As there's no addOrUpdate, we first try to remove the tier price before adding it.
-        }
+//        }
     }
 
     private function createTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)

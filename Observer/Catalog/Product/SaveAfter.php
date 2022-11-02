@@ -38,7 +38,7 @@ class SaveAfter implements ObserverInterface
         LoggerInterface $logger,
         PriceListCron $cron,
         PriceListItemGroupRepositoryInterface $priceListItemGroupRepository,
-        SearchCriteriaBuilder $searchCriteriaBuilder,
+        SearchCriteriaBuilder $searchCriteriaBuilder
     ) {
         $this->helper                       = $helper;
         $this->logger                       = $logger;

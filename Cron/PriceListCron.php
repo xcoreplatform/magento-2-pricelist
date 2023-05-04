@@ -166,8 +166,6 @@ class PriceListCron implements PriceListCronInterface
 
         $this->processItemGroupPriceLists();
 
-        $this->processDefaultCustomerGroupPriceList();
-
         $result = new CronResult;
         $result->setRemoved($this->removedTierPrices);
         $result->setAddedOrUpdated($this->addedTierPrices);
@@ -585,7 +583,7 @@ class PriceListCron implements PriceListCronInterface
     private function addAllCustomerGroup()
     {
         $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
-                                                      ->addFilter(PriceListInterface::CUSTOMER_GROUPS, 'all', 'eq')
+                                                      ->addFilter(PriceListInterface::CUSTOMER_GROUPS, 'all')
                                                       ->create();
         $result         = $this->priceListRepository->getList($searchCriteria);
 

@@ -94,22 +94,22 @@ class PriceListCron implements PriceListCronInterface
      * @param GroupManagementInterface          $groupManagement
      */
     public function __construct(
-        LoggerInterface $logger,
-        Data $helper,
-        FilterGroupBuilder $filterGroupBuilder,
-        FilterBuilder $filterBuilder,
-        SearchCriteriaBuilder $searchCriteriaBuilder,
-        GroupRepository $groupRepository,
-        GroupInterfaceFactory $groupFactory,
-        TaxClassRepository $taxRepository,
-        PriceListRepositoryInterface $priceListRepository,
-        PriceListItemRepositoryInterface $priceListItemRepository,
-        PriceListItemGroupRepositoryInterface $priceListItemGroupRepository,
+        LoggerInterface                           $logger,
+        Data                                      $helper,
+        FilterGroupBuilder                        $filterGroupBuilder,
+        FilterBuilder                             $filterBuilder,
+        SearchCriteriaBuilder                     $searchCriteriaBuilder,
+        GroupRepository                           $groupRepository,
+        GroupInterfaceFactory                     $groupFactory,
+        TaxClassRepository                        $taxRepository,
+        PriceListRepositoryInterface              $priceListRepository,
+        PriceListItemRepositoryInterface          $priceListItemRepository,
+        PriceListItemGroupRepositoryInterface     $priceListItemGroupRepository,
         ScopedProductTierPriceManagementInterface $tierPriceManagement,
-        ProductTierPriceInterfaceFactory $productTierPriceFactory,
-        Config $config,
-        ProductRepositoryInterface $productRepository,
-        GroupManagementInterface $groupManagement
+        ProductTierPriceInterfaceFactory          $productTierPriceFactory,
+        Config                                    $config,
+        ProductRepositoryInterface                $productRepository,
+        GroupManagementInterface                  $groupManagement
     ) {
         $this->logger                       = $logger;
         $this->helper                       = $helper;
@@ -148,7 +148,7 @@ class PriceListCron implements PriceListCronInterface
 
             /** @var PriceListItemGroup $priceListItemGroup */
             foreach ($this->priceListItemGroupsToAdd as $priceListItemGroup) {
-                if($priceListItemGroup->getEndDate() && $priceListItemGroup->getEndDate() < date('Y-m-d')) {
+                if ($priceListItemGroup->getEndDate() && $priceListItemGroup->getEndDate() < date('Y-m-d')) {
                     continue;
                 }
 
@@ -222,7 +222,7 @@ class PriceListCron implements PriceListCronInterface
 
     private function setupCreateTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)
     {
-        $priceList = $this->priceListRepository->getById($priceListItemGroup->getPriceListId());
+        $priceList        = $this->priceListRepository->getById($priceListItemGroup->getPriceListId());
         $customerGroupIds = $priceList->getCustomerGroupIds();
 
         if (!is_null($customerGroupIds)) {
@@ -237,7 +237,7 @@ class PriceListCron implements PriceListCronInterface
 
     private function setupRemoveTierPricesForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup)
     {
-        $priceList = $this->priceListRepository->getById($priceListItemGroup->getPriceListId());
+        $priceList        = $this->priceListRepository->getById($priceListItemGroup->getPriceListId());
         $customerGroupIds = $priceList->getCustomerGroupIds();
         if (!is_null($customerGroupIds)) {
             $groupIdList = explode(',', $customerGroupIds);
@@ -249,11 +249,14 @@ class PriceListCron implements PriceListCronInterface
         }
     }
 
-    private function buildTierPriceForItemGroup(string $sku, PriceListItemGroupInterface $priceListItemGroup, $customerGroupId = null):ProductTierPriceInterface
-    {
+    private function buildTierPriceForItemGroup(
+        string                      $sku,
+        PriceListItemGroupInterface $priceListItemGroup,
+                                    $customerGroupId = null
+    ):ProductTierPriceInterface {
         /** @var ProductTierPriceInterface $productTierPrice */
         $productTierPrice = $this->productTierPriceFactory->create();
-        $groupId = $customerGroupId ?? $this->groupManagement->getAllCustomersGroup()->getId();
+        $groupId          = $customerGroupId ?? $this->groupManagement->getAllCustomersGroup()->getId();
 
         $productTierPrice->setCustomerGroupId($groupId)
                          ->setQty((float)$priceListItemGroup->getQty())
@@ -292,7 +295,7 @@ class PriceListCron implements PriceListCronInterface
 
             $this->addedTierPrices++;
 
-            if(is_null($this->updateSingleProductSku)) {
+            if (is_null($this->updateSingleProductSku)) {
                 $priceListItemGroup->setProcessed(1);
             }
 
@@ -572,7 +575,35 @@ class PriceListCron implements PriceListCronInterface
             $this->allCustomerGroups[] = $group;
         }
 
+        $this->addAllCustomerGroup();
+
         $this->setAllListIdsToCreateTierPricesFor();
+    }
+
+    private function addAllCustomerGroup()
+    {
+        $searchCriteria = $this->searchCriteriaBuilder->setFilterGroups([])
+                                                      ->addFilter(PriceListInterface::CUSTOMER_GROUPS, 'all')
+                                                      ->create();
+        $result         = $this->priceListRepository->getList($searchCriteria);
+
+        //If no default pricelist isset, return
+        if ($result->getTotalCount() < 1) {
+            return;
+        }
+
+        $allGroups = $this->groupManagement->getAllCustomersGroup();
+
+        foreach ($result->getItems() as $defaultPricelist) {
+            $group               = new CustomerGroup();
+            $group->id           = $allGroups->getId();
+            $group->code         = $allGroups->getCode();
+            $group->priceListId  = $defaultPricelist->getId();
+            $group->taxClassId   = $allGroups->getTaxClassId();
+            $group->taxClassName = $allGroups->getTaxClassName();
+
+            $this->allCustomerGroups[] = $group;
+        }
     }
 
     private function getPriceListIdByCustomerGroupId($customerGroupCode)

@@ -323,6 +323,8 @@ class PriceListCron implements PriceListCronInterface
 
         $this->setItemsToRemove();
 
+        $this->setItemsToAddBasedOnRemoveableList();
+
         $this->setItemsToAdd();
 
         foreach ($this->itemsToProcess as $sku => $process) {
@@ -332,6 +334,58 @@ class PriceListCron implements PriceListCronInterface
 
             if (isset($process['add'])) {
                 $this->createTierPrices($sku, $process['add']);
+            }
+        }
+    }
+
+    private function setItemsToAddBasedOnRemoveableList()
+    {
+        //Compose a list of sku's per pricelist
+        $listPerPricelist = [];
+        foreach ($this->itemsToProcess as $sku => $process) {
+            if (!isset($process['remove'])) {
+                continue;
+            }
+            // Should check for old but still active pricelist prices
+            foreach ($process['remove'] as $pricelists => $item) {
+                $listPerPricelist[$pricelists][] = $sku;
+            }
+        }
+
+        $endDateNullFilter = $this->filterBuilder
+            ->setField(PriceListItemInterface::END_DATE)
+            ->setConditionType('null')
+            ->create();
+
+        $endDateGreaterFilter = $this->filterBuilder
+            ->setField(PriceListItemInterface::END_DATE)
+            ->setValue(date('Y-m-d'))
+            ->setConditionType('gt')
+            ->create();
+
+        foreach ($listPerPricelist as $pricelistId => $itemSku) {
+            $searchCriteria = $this->searchCriteriaBuilder
+                ->addFilter(PriceListItemInterface::START_DATE, date('Y-m-d'), 'lt')
+                ->addFilter(PriceListItemInterface::PROCESSED, '1')
+                ->addFilter(PriceListItemInterface::PRICE_LIST_ID, (int)$pricelistId)
+                ->addFilter(
+                    PriceListItemInterface::PRODUCT_SKU,
+                    $listPerPricelist[$pricelistId],
+                    'in'
+                );
+
+            $searchCriteriaEndDateNull = $searchCriteria->addFilters([$endDateNullFilter])->create();
+
+            $priceListItems = $this->priceListItemRepository->getList($searchCriteriaEndDateNull)->getItems();
+
+            $searchCriteriaEndDateNull = $searchCriteria->addFilters([$endDateGreaterFilter])->create();
+
+            $priceListItemsEndDateGt = $this->priceListItemRepository->getList($searchCriteriaEndDateNull)->getItems();
+
+            $priceListItems = array_merge($priceListItems, $priceListItemsEndDateGt);
+            foreach ($priceListItems as $priceListItem) {
+                $priceListItem->setProcessed(0);
+                $this->priceListItemRepository->save($priceListItem);
             }
         }
     }

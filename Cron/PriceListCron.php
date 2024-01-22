@@ -188,7 +188,7 @@ class PriceListCron implements PriceListCronInterface
             $result         = $this->productRepository->getList($searchCriteria);
 
             foreach ($result->getItems() as $product) {
-                $this->setupRemoveTierPricesForItemGroup($product->getSku(), $priceListItemGroup);
+                $this->setupRemoveTierPricesForItemGroup($product->getSku(), $priceListItemGroupToRemove);
                 $this->removedTierPrices++;
             }
         }

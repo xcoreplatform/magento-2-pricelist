@@ -68,6 +68,7 @@ class PriceListCron implements PriceListCronInterface
      */
     private $productTierPriceFactory;
     private $productRepository;
+    private $groupManagement;
     // Variables for updating the tier prices with the aftersave from a product
     private $updateSingleProductSku = null;
     /** @var ?PriceListItemGroupInterface[] $priceListItemGroupsToAdd */

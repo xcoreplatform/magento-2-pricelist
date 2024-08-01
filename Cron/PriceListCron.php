@@ -68,6 +68,7 @@ class PriceListCron implements PriceListCronInterface
      */
     private $productTierPriceFactory;
     private $productRepository;
+    private $groupManagement;
     // Variables for updating the tier prices with the aftersave from a product
     private $updateSingleProductSku = null;
     /** @var ?PriceListItemGroupInterface[] $priceListItemGroupsToAdd */
@@ -188,7 +189,7 @@ class PriceListCron implements PriceListCronInterface
             $result         = $this->productRepository->getList($searchCriteria);
 
             foreach ($result->getItems() as $product) {
-                $this->setupRemoveTierPricesForItemGroup($product->getSku(), $priceListItemGroup);
+                $this->setupRemoveTierPricesForItemGroup($product->getSku(), $priceListItemGroupToRemove);
                 $this->removedTierPrices++;
             }
         }

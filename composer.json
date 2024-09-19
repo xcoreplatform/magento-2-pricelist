@@ -1,10 +1,10 @@
 {
-    "name": "dealer4dealer/pricelist-magento2",
-    "description": "Creates Tier Prices by using the data synchronised with https://github.com/dealer4dealer/magento2-restapi.",
+    "name": "xcoreplatform/pricelist-magento2",
+    "description": "Creates Tier Prices by using the data synchronised with https://github.com/xcoreplatform/magento2-restapi.",
     "type": "magento2-module",
     "license": ["MIT"],
     "require": {
-        "dealer4dealer/xcore-magento2": "^2.9.0"
+        "xcoreplatform/xcore-magento2": "^2.9.0"
     },
     "autoload": {
         "files": ["registration.php"],
